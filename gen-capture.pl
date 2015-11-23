@@ -7,7 +7,7 @@ use Switch;
 # Subroutine prototypes
 sub SYNC ();
 
-system $^O eq 'MSWin32' ? 'cls' : 'clear';
+# system $^O eq 'MSWin32' ? 'cls' : 'clear';
 
 my $pcap_file = "file.pcap";
 my $packet_length;
@@ -29,34 +29,33 @@ binmode(PCAP_FILE);
 print PCAP_FILE pack "H*", $pcap_header;
 
 while ($last_frame != 1) {
-  system $^O eq 'MSWin32' ? 'cls' : 'clear';
-  printf ("\n  Following packet types can be generated:\n\n");
-  printf ("   1) SYNC     16)          31)          46)          61) Special OFDM Packet  \n");
-  printf ("   2)          17)          32)          47)                                   \n");
-  printf ("   3)          18)          33)          48)                                   \n");
-  printf ("   4)          19)          34)          49)                                   \n");
-  printf ("   5)          20)          35)          50)                                   \n");
-  printf ("   6)          21)          36)          51)                                   \n");
-  printf ("   7)          22)          37)          52)                                   \n");
-  printf ("   8)          23)          38)          53)                                   \n");
-  printf ("   9)          24)          39)          54)                                   \n");
-  printf ("  10)          25)          40)          55)                                   \n");
-  printf ("  11)          26)          41)          56)                                   \n");
-  printf ("  12)          27)          42)          57)                                   \n");
-  printf ("  13)          28)          43)          58)                                   \n");
-  printf ("  14)          29)          44)          59)                                   \n");
-  printf ("  15)          30)          45)          60)                                   \n");
-  printf "\n  Frame " . $frame_number . " - Choose packet type which will be generated:  ";
+#  system $^O eq 'MSWin32' ? 'cls' : 'clear';
+  print "\n  Following packet types can be generated:\n\n";
+  print "   1) SYNC     16)          31)          46)          61) Special OFDM Packet  \n";
+  print "   2)          17)          32)          47)                                   \n";
+  print "   3)          18)          33)          48)                                   \n";
+  print "   4)          19)          34)          49)                                   \n";
+  print "   5)          20)          35)          50)                                   \n";
+  print "   6)          21)          36)          51)                                   \n";
+  print "   7)          22)          37)          52)                                   \n";
+  print "   8)          23)          38)          53)                                   \n";
+  print "   9)          24)          39)          54)                                   \n";
+  print "  10)          25)          40)          55)                                   \n";
+  print "  11)          26)          41)          56)                                   \n";
+  print "  12)          27)          42)          57)                                   \n";
+  print "  13)          28)          43)          58)                                   \n";
+  print "  14)          29)          44)          59)                                   \n";
+  print "  15)          30)          45)          60)                                   \n";
+  print "\n  Frame " . $frame_number . " - Choose packet type which will be generated:  ";
   $frame_type = <>;
   switch ($frame_type) {
     case 1 {
-      ($packet_length, $packet_value) = SYNC();
+      ($packet_value, $packet_length) = SYNC();
     } 
     else {
-      ($packet_length, $packet_value) = SYNC();
+      ($packet_value, $packet_length) = SYNC();
     }
   }
-  ($packet_length, $packet_value) = SYNC();
   print PCAP_FILE pack "H*", $packet_timestamp;
   print PCAP_FILE pack "V", $packet_length;
   print PCAP_FILE pack "V", $packet_length;
@@ -71,30 +70,81 @@ printf "\n  Your packets were stored in file:    " . $pcap_file . "\n\n";
 close PCAP_FILE;
 
 sub SYNC() {
-  our $SYNC_length;
-  our $SYNC_value;
-  $SYNC_length = 0;
-  $SYNC_value = "000003010100000000";
-  $SYNC_value = $SYNC_value . sprintf("%02x", rand(0xFF));
-  $SYNC_length = $SYNC_length + 10;
-  $SYNC_value = sprintf("%04x", $SYNC_length) . $SYNC_value;
-  $SYNC_length = $SYNC_length + 2;
-  for (my $i = 0; $i < 3; $i++) {
-    $SYNC_value = sprintf("%02x", rand(0xFF)) . $SYNC_value;
-    $SYNC_length = $SYNC_length + 1;
+  our $packet_value;
+  our $packet_length = 0;
+  # Add SYNC Message
+  $packet_value = "000000" . sprintf("%02x", rand(0xFF));
+  $packet_length = $packet_length + 4;
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "01", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+# value, length, dsap, ssap, version, type, reserved/multipart
+sub add_mac_management () {
+  our @input = @_;
+  our $packet_value;
+  our $packet_length;
+  our $i;
+  # Add Reserved/Multipart field
+  $packet_value = $input[6] . $input[0];
+  $packet_length = $input[1] + 1;
+  # Add Type field
+  $packet_value = $input[5] . $packet_value;
+  $packet_length = $packet_length + 1;
+  # Add Version field
+  $packet_value = $input[4] . $packet_value;
+  $packet_length = $packet_length + 1;
+  # Add Control field
+  $packet_value = "03" . $packet_value;
+  $packet_length = $packet_length + 1;
+  # Add SSAP field
+  $packet_value = $input[3] . $packet_value;
+  $packet_length = $packet_length + 1;
+  # Add DSAP field
+  $packet_value = $input[2] . $packet_value;
+  $packet_length = $packet_length + 1;
+  # Add Length field
+  $packet_value = sprintf("%04x", $packet_length) . $packet_value;
+  $packet_length = $packet_length + 2;
+  # Add Source MAC Address
+  for ($i = 0; $i < 3; $i++) {
+    $packet_value = sprintf("%02x", rand(0xFF)) . $packet_value;
+    $packet_length = $packet_length + 1;
   }
-  $SYNC_value = "001DCE" . $SYNC_value;
-  $SYNC_length = $SYNC_length + 3;
-  for (my $i = 0; $i < 3; $i++) {
-    $SYNC_value = sprintf("%02x", rand(0xFF)) . $SYNC_value;
-    $SYNC_length = $SYNC_length + 1;
+  $packet_value = "00015C" . $packet_value;
+  $packet_length = $packet_length + 3;
+  # Add Destination MAC Address
+  for ($i = 0; $i < 3; $i++) {
+    $packet_value = sprintf("%02x", rand(0xFF)) . $packet_value;
+    $packet_length = $packet_length + 1;
   }
-  $SYNC_value = "001DCE" . $SYNC_value;
-  $SYNC_length = $SYNC_length + 3;
-  $SYNC_value = "0000" . $SYNC_value;
-  $SYNC_value = sprintf("%04x", $SYNC_length) . $SYNC_value;
-  $SYNC_length = $SYNC_length + 4;
-  $SYNC_value = "C000" . $SYNC_value;
-  $SYNC_length = $SYNC_length + 2;
-  return ($SYNC_length, $SYNC_value);
+  $packet_value = "00015C" . $packet_value;
+  $packet_length = $packet_length + 3;
+  return ($packet_value, $packet_length);
+}
+
+# value, length, hcs, ehdr, macparm, fc_type (64/128/192), fc_parm (2..62), ehdr_on (0/1)
+sub add_docsis () {
+  our @input = @_;
+  our $packet_value;
+  our $packet_length;
+  # Add HCS field
+  $packet_value = $input[2] . $input[0];
+  $packet_length = $input[1] + 2;
+  # TODO Add ehdr field
+  # Add Length field
+  $packet_value = sprintf("%04x", $packet_length) . $packet_value;
+  $packet_length = $packet_length + 2;
+  # Add MAC_PARM field
+  $packet_value = $input[4] . $packet_value;
+  use bytes;
+  $packet_length = $packet_length + (length (pack "H*", $input[4]));
+  no bytes;
+  # Add Frame Control (FC) field
+  $packet_value = sprintf("%02x", $input[5] + $input[6] + $input[7]) . $packet_value;
+  $packet_length = $packet_length + 1;
+  return ($packet_value, $packet_length);
 }
