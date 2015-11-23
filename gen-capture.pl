@@ -7,6 +7,7 @@ use Switch;
 # Subroutine prototypes
 sub SYNC ();
 sub request_minislots();
+sub request_bytes();
 
 # system $^O eq 'MSWin32' ? 'cls' : 'clear';
 
@@ -35,7 +36,7 @@ while ($last_frame != 1) {
   print "   1) SYNC     16)          31)          46)          61) Special OFDM Packet        \n";
   print "   2)          17)          32)          47)                                         \n";
   print "   3)          18)          33)          48)           a) Request Frame (minislots)  \n";
-  print "   4)          19)          34)          49)                                         \n";
+  print "   4)          19)          34)          49)           b) Request Frame (bytes)      \n";
   print "   5)          20)          35)          50)                                         \n";
   print "   6)          21)          36)          51)                                         \n";
   print "   7)          22)          37)          52)                                         \n";
@@ -56,6 +57,9 @@ while ($last_frame != 1) {
     } 
     case "a" {
       ($packet_value, $packet_length) = request_minislots();
+    }
+    case "b" {
+      ($packet_value, $packet_length) = request_bytes();
     }
     else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
@@ -92,6 +96,13 @@ sub request_minislots() {
   our $packet_value = "";
   our $packet_length = 0;
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, sprintf("%02x", rand(0xFF)), 192, 4, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub request_bytes() {
+  our $packet_value = "";
+  our $packet_length = 0;
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, sprintf("%02x", rand(0xFF)), 192, 8, 0);
   return ($packet_value, $packet_length);
 }
 
@@ -173,6 +184,21 @@ sub add_docsis () {
       # Add Minislots field
       $packet_value = sprintf("%02x", rand(0xFF)) . $packet_value;
       $packet_length = $packet_length + 1;
+      # Add Frame Control (FC) field
+      $packet_value = sprintf("%02x", $input[5] + $input[6] + $input[7]) . $packet_value;
+      $packet_length = $packet_length + 1;
+      last;
+    }
+    case 8 {
+      # Add HCS field
+      $packet_value = $input[2] . $input[0];
+      $packet_length = $input[1] + 2;
+      # Add SID
+      $packet_value = sprintf("%04x", rand(0x3FFF)) . $packet_value;
+      $packet_length = $packet_length + 2;
+      # Add Bytes field
+      $packet_value = sprintf("%04x", rand(0xFF)) . $packet_value;
+      $packet_length = $packet_length + 2;
       # Add Frame Control (FC) field
       $packet_value = sprintf("%02x", $input[5] + $input[6] + $input[7]) . $packet_value;
       $packet_length = $packet_length + 1;
