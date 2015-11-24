@@ -6,8 +6,10 @@ use Switch;
 
 # Subroutine prototypes
 sub SYNC ();
+sub type2UCD();
 sub request_minislots();
 sub request_bytes();
+sub random_bits;
 
 # system $^O eq 'MSWin32' ? 'cls' : 'clear';
 
@@ -33,28 +35,36 @@ print PCAP_FILE pack "H*", $pcap_header;
 while ($last_frame != 1) {
 #  system $^O eq 'MSWin32' ? 'cls' : 'clear';
   print "\n  Following packet types can be generated:\n\n";
-  print "   1) SYNC     16)          31)          46)          61) Special OFDM Packet        \n";
-  print "   2)          17)          32)          47)                                         \n";
-  print "   3)          18)          33)          48)           a) Request Frame (minislots)  \n";
-  print "   4)          19)          34)          49)           b) Request Frame (bytes)      \n";
-  print "   5)          20)          35)          50)                                         \n";
-  print "   6)          21)          36)          51)                                         \n";
-  print "   7)          22)          37)          52)                                         \n";
-  print "   8)          23)          38)          53)                                         \n";
-  print "   9)          24)          39)          54)                                         \n";
-  print "  10)          25)          40)          55)                                         \n";
-  print "  11)          26)          41)          56)                                         \n";
-  print "  12)          27)          42)          57)                                         \n";
-  print "  13)          28)          43)          58)                                         \n";
-  print "  14)          29)          44)          59)                                         \n";
-  print "  15)          30)          45)          60)                                         \n";
+  print "   1) SYNC         16)               31)               46)               61)                             \n";
+  print "   2) Type 2 UCD   17)               32)               47)                                               \n";
+  print "   3)              18)               33)               48)                a) Request Frame (minislots)   \n";
+  print "   4)              19)               34)               49)                b) Request Frame (bytes)       \n";
+  print "   5)              20)               35)               50)                                               \n";
+  print "   6)              21)               36)               51)                                               \n";
+  print "   7)              22)               37)               52)                                               \n";
+  print "   8)              23)               38)               53)                                               \n";
+  print "   9)              24)               39)               54)                                               \n";
+  print "  10)              25)               40)               55)                                               \n";
+  print "  11)              26)               41)               56)                                               \n";
+  print "  12)              27)               42)               57)                                               \n";
+  print "  13)              28)               43)               58)                                               \n";
+  print "  14)              29)               44)               59)                                               \n";
+  print "  15)              30)               45)               60)                                               \n";
   print "\n  Frame " . $frame_number . " - Choose packet type which will be generated:  ";
+
+# Debug info
+# type2UCD();
+# Debug info
+
   $frame_type = <>;
   chomp $frame_type;
   switch ($frame_type) {
     case 1 {
       ($packet_value, $packet_length) = SYNC();
-    } 
+    }
+    case 2 {
+      ($packet_value, $packet_length) = type2UCD();
+    }
     case "a" {
       ($packet_value, $packet_length) = request_minislots();
     }
@@ -89,6 +99,280 @@ sub SYNC() {
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "01", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub type2UCD() {
+  our $packet_value;
+  our $packet_length;
+  our $last_tlv = 0;
+  our $last_sub_tlv = 0;
+  our $choosen_tlv;
+  our $choosen_sub_tlv;
+  our $tlv_number = 1;
+  our $sub_tlv_number = 1;
+  our $sub_tlv_value;
+  our $sub_tlv_length;
+  our $i;
+  our $j;
+  # Add Upstream Channel ID field
+  $packet_value = sprintf("%02x", rand(0xFF));
+  $packet_length = 1;
+  # Add Config Change Count field
+  $packet_value = $packet_value . sprintf("%02x", rand(0xFF));
+  $packet_length = $packet_length + 1;
+  # Add Minislot Size field
+  $packet_value = $packet_value . sprintf("%02x", 2 ** rand(0x8));
+  $packet_length = $packet_length + 1;
+  # Add Downstream Channel ID field
+  $packet_value = $packet_value . sprintf("%02x", rand(0xFF));
+  $packet_length = $packet_length + 1;
+  # Add TLV data
+  while ($last_tlv != 1) {
+    print "\n  Following TLVs can be added:\n\n";
+    print "   1) Modulation Rate\n";
+    print "   2) Frequency\n";
+    print "   3) Preamble Pattern\n";
+    print "   4) Burst Descriptor (DOCSIS 1.x)\n";
+    print "      ...\n";
+    print "   5) Burst Descriptor (DOCSIS 2.0/3.0)\n";
+    print "      ...\n";
+    print "   6) Extended Preamble Pattern\n";
+    print "   7) S-CDMA Mode Enable\n";
+    print "  15) Maintain Power Spectral Density\n";
+    print "  16) Ranging Required\n";
+    print "  18) Ranging Hold-Off Priority Field\n";
+    print "  19) Channel Class ID\n";
+    print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
+    $choosen_tlv = <>;
+    chomp $choosen_tlv;
+    switch ($choosen_tlv) {
+      case 1 {
+        $packet_value = $packet_value . "01" . "01" . sprintf("%02x", 2 ** rand(0x5));
+        $packet_length = $packet_length + 3;
+      }
+      case 2 {
+        $packet_value = $packet_value . "02" . "04" . sprintf("%08x", (int(rand(80)) + 5) * 1000000);
+        $packet_length = $packet_length + 6;
+      }
+      case 3 {
+        $i = int(rand(127)) + 1;
+        $packet_value = $packet_value . "03" . sprintf("%02x", $i);
+        for (my $j = 0; $j < $i; $j++) {
+          $packet_value = $packet_value . sprintf("%02x", rand(0xFF));
+        }
+        $packet_length = $packet_length + $i + 2;
+      }
+      case 4 {
+        # Create BURST4 sub-TLVs
+        $sub_tlv_value = "";
+        $sub_tlv_length = 0;
+        $last_sub_tlv = 0;
+        while ($last_sub_tlv != 1) {
+          print "\n  Following sub-TLVs can be added:\n\n";
+          print "   1) Modulation Type\n";
+          print "   2) Differential Encoding\n";
+          print "   3) Preamble Length\n";
+          print "   4) Preamble Value Offset\n";
+          print "   5) FEC Error Correction (T)\n";
+          print "   6) FEC Codeword Information Bytes (k)\n";
+          print "   7) Scrambler Seed\n";
+          print "   8) Maximum Burst Size\n";
+          print "   9) Guard Time Size\n";
+          print "  10) Last Codeword Length\n";
+          print "  11) Scrambler on/off\n";
+          print "\n  sub-TLV " . $sub_tlv_number++ . " - Choose sub-TLV which should be added:  ";
+          $choosen_sub_tlv = <>;
+          chomp $choosen_sub_tlv;
+          switch ($choosen_sub_tlv) {
+            case 1 {
+              $sub_tlv_value = $sub_tlv_value . "01" . "01" . sprintf("%02x", rand(7) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 2 {
+              $sub_tlv_value = $sub_tlv_value . "02" . "01" . sprintf("%02x", rand(2) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 3 {
+              $sub_tlv_value = $sub_tlv_value . "03" . "02" . sprintf("%04x", rand(1536) + 1);
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 4 {
+              $sub_tlv_value = $sub_tlv_value . "04" . "02" . sprintf("%04x", rand(0xFFFF));
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 5 {
+              $sub_tlv_value = $sub_tlv_value . "05" . "01" . sprintf("%02x", rand(17));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 6 {
+              $sub_tlv_value = $sub_tlv_value . "06" . "01" . sprintf("%02x", rand(238) + 16);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 7 {
+              $sub_tlv_value = $sub_tlv_value . "07" . "02" . sprintf("%04x", rand(0xFFFF));
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 8 {
+              $sub_tlv_value = $sub_tlv_value . "08" . "01" . sprintf("%02x", rand(0xFF) + 16);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 9 {
+              $sub_tlv_value = $sub_tlv_value . "09" . "01" . sprintf("%02x", rand(0xFF));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 10 {
+              $sub_tlv_value = $sub_tlv_value . "0A" . "01" . sprintf("%02x", rand(2) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 11 {
+              $sub_tlv_value = $sub_tlv_value . "0B" . "01" . sprintf("%02x", rand(2) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            else {
+              print "\n  This is not a valid option. Calling EXIT... \n\n";
+              exit;
+            }
+          }
+          printf "\n  Is this last sub-TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+          $last_sub_tlv = <>;
+        }
+        $packet_value = $packet_value . "04" . sprintf("%02x", $sub_tlv_length + 1) . sprintf("%02x", int(rand(15)) + 1) . $sub_tlv_value;
+        $packet_length = $packet_length + 3 + $sub_tlv_length;
+      }
+      case 5 {
+        # Create BURST5 sub-TLVs
+        $sub_tlv_value = "";
+        $sub_tlv_length = 0;
+        $last_sub_tlv = 0;
+        while ($last_sub_tlv != 1) {
+          print "\n  Following sub-TLVs can be added:\n\n";
+          print "   1) Modulation Type\n";
+          print "   2) Differential Encoding\n";
+          print "   3) Preamble Length\n";
+          print "   4) Preamble Value Offset\n";
+          print "   5) FEC Error Correction (T)\n";
+          print "   6) FEC Codeword Information Bytes (k)\n";
+          print "   7) Scrambler Seed\n";
+          print "   8) Maximum Burst Size\n";
+          print "   9) Guard Time Size\n";
+          print "  10) Last Codeword Length\n";
+          print "  11) Scrambler on/off\n";
+          print "  12) R-S Interleaver Depth (Ir)\n";
+          print "  13) R-S Interleaver Block Size (Br)\n";
+          print "  14) Preamble Type\n";
+          print "\n  sub-TLV " . $sub_tlv_number++ . " - Choose sub-TLV which should be added:  ";
+          $choosen_sub_tlv = <>;
+          chomp $choosen_sub_tlv;
+          switch ($choosen_sub_tlv) {
+            case 1 {
+              $sub_tlv_value = $sub_tlv_value . "01" . "01" . sprintf("%02x", rand(7) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 2 {
+              $sub_tlv_value = $sub_tlv_value . "02" . "01" . sprintf("%02x", rand(2) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 3 {
+              $sub_tlv_value = $sub_tlv_value . "03" . "02" . sprintf("%04x", rand(1536) + 1);
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 4 {
+              $sub_tlv_value = $sub_tlv_value . "04" . "02" . sprintf("%04x", rand(0xFFFF));
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 5 {
+              $sub_tlv_value = $sub_tlv_value . "05" . "01" . sprintf("%02x", rand(17));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 6 {
+              $sub_tlv_value = $sub_tlv_value . "06" . "01" . sprintf("%02x", rand(238) + 16);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 7 {
+              $sub_tlv_value = $sub_tlv_value . "07" . "02" . sprintf("%04x", rand(0xFFFF));
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 8 {
+              $sub_tlv_value = $sub_tlv_value . "08" . "01" . sprintf("%02x", rand(0xFF) + 16);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 9 {
+              $sub_tlv_value = $sub_tlv_value . "09" . "01" . sprintf("%02x", rand(0xFF));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 10 {
+              $sub_tlv_value = $sub_tlv_value . "0A" . "01" . sprintf("%02x", rand(2) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 11 {
+              $sub_tlv_value = $sub_tlv_value . "0B" . "01" . sprintf("%02x", rand(2) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 12 {
+              $sub_tlv_value = $sub_tlv_value . "0C" . "01" . sprintf("%02x", rand(0xFF));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 13 {
+              $sub_tlv_value = $sub_tlv_value . "0D" . "02" . sprintf("%04x", rand(0xFFFF));
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 14 {
+              $sub_tlv_value = $sub_tlv_value . "0E" . "01" . sprintf("%02x", rand(2) + 1);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            else {
+              print "\n  This is not a valid option. Calling EXIT... \n\n";
+              exit;
+            }
+          }
+          printf "\n  Is this last sub-TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+          $last_sub_tlv = <>;
+        }
+        $packet_value = $packet_value . "05" . sprintf("%02x", $sub_tlv_length + 1) . sprintf("%02x", int(rand(15)) + 1) . $sub_tlv_value;
+        $packet_length = $packet_length + 3 + $sub_tlv_length;
+      }
+      case 6 {
+        $i = int(rand(63)) + 1;
+        $packet_value = $packet_value . "06" . sprintf("%02x", $i);
+        for (my $j = 0; $j < $i; $j++) {
+          $packet_value = $packet_value . sprintf("%02x", rand(0xFF));
+        }
+        $packet_length = $packet_length + $i + 2;
+      }
+      case 7 {
+        $packet_value = $packet_value . "07" . "01" . sprintf("%02x", int(rand(2)) + 1);
+        $packet_length = $packet_length + 3;
+      }
+      case 15 {
+        $packet_value = $packet_value . "0F" . "01" . sprintf("%02x", int(rand(2)) + 1);
+        $packet_length = $packet_length + 3;
+      }
+      case 16 {
+        $packet_value = $packet_value . "10" . "01" . sprintf("%02x", int(rand(3)));
+        $packet_length = $packet_length + 3;
+      }
+      case 18 {
+        $packet_value = $packet_value . "12" . "04" . random_bits(32, 0xFFFF000F);
+        $packet_length = $packet_length + 6;
+      }
+      case 19 {
+        $packet_value = $packet_value . "13" . "04" . random_bits(32, 0xFFFF000F);
+        $packet_length = $packet_length + 6;
+      }
+      else {
+        print "\n  This is not a valid option. Calling EXIT... \n\n";
+        exit;
+      }
+    }
+    printf "\n  Is this last TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+    $last_tlv = <>;
+    $tlv_number++;
+  }
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "02", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
   return ($packet_value, $packet_length);
 }
 
@@ -156,7 +440,7 @@ sub add_docsis () {
   our $packet_value;
   our $packet_length;
   switch ($input[6]) {
-    case 0 {
+    case [0,2] {
       # Add HCS field
       $packet_value = $input[2] . $input[0];
       $packet_length = $input[1] + 2;
@@ -206,4 +490,21 @@ sub add_docsis () {
     }
   }
   return ($packet_value, $packet_length);
+}
+
+sub random_bits {
+  our $i = 0;
+  our $value = "";
+  our $binary = "";
+  our @input = @_;
+  our @bits = split //, sprintf ("%0" . $input[0] . "b", $input[1]);
+  foreach (@bits) { 
+    if ($_ == 1) {
+      $bits[$i] = int(rand(2));
+    }
+    $binary = join("", $binary, $bits[$i]);
+    $value = sprintf("%0" . $input[0] / 4 . "x", oct("0b" . $binary));
+    $i++;
+  }
+  return $value;
 }
