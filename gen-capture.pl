@@ -41,7 +41,7 @@ while ($last_frame != 1) {
   print "   2) Type 2 UCD   17)               32)               47)                                               \n";
   print "   3)              18)               33)               48)                a) Request Frame (minislots)   \n";
   print "   4)              19)               34)               49)                b) Request Frame (bytes)       \n";
-  print "   5)              20)               35)               50)                                               \n";
+  print "   5)              20)               35) Type 35 UCD   50)                                               \n";
   print "   6)              21)               36)               51)                                               \n";
   print "   7)              22)               37)               52)                                               \n";
   print "   8)              23)               38)               53)                                               \n";
