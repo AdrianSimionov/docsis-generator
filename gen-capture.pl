@@ -612,7 +612,7 @@ sub type29UCD() {
         $packet_length = $packet_length + 3;
       }
       case 17 {
-        $packet_value = $packet_value . "07" . "01" . sprintf("%02x", int(rand(2)) + 1);
+        $packet_value = $packet_value . "11" . "01" . sprintf("%02x", int(rand(2)) + 1);
         $packet_length = $packet_length + 3;
       }
       case 18 {
