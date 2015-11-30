@@ -7,7 +7,9 @@ use Switch;
 # Subroutine prototypes
 sub SYNC ();
 sub type2UCD();
+sub RNG_REQ();
 sub type29UCD();
+sub B_INIT_RNG_REQ();
 sub type35UCD();
 sub request_minislots();
 sub request_bytes();
@@ -37,26 +39,22 @@ print PCAP_FILE pack "H*", $pcap_header;
 while ($last_frame != 1) {
 #  system $^O eq 'MSWin32' ? 'cls' : 'clear';
   print "\n  Following packet types can be generated:\n\n";
-  print "   1) SYNC         16)               31)               46)               61)                             \n";
-  print "   2) Type 2 UCD   17)               32)               47)                                               \n";
-  print "   3)              18)               33)               48)                a) Request Frame (minislots)   \n";
-  print "   4)              19)               34)               49)                b) Request Frame (bytes)       \n";
-  print "   5)              20)               35) Type 35 UCD   50)                                               \n";
-  print "   6)              21)               36)               51)                                               \n";
-  print "   7)              22)               37)               52)                                               \n";
-  print "   8)              23)               38)               53)                                               \n";
-  print "   9)              24)               39)               54)                                               \n";
-  print "  10)              25)               40)               55)                                               \n";
-  print "  11)              26)               41)               56)                                               \n";
-  print "  12)              27)               42)               57)                                               \n";
-  print "  13)              28)               43)               58)                                               \n";
-  print "  14)              29) Type 29 UCD   44)               59)                                               \n";
-  print "  15)              30)               45)               60)                                               \n";
+  print "   1) SYNC         16)               31)                  46)               61)                             \n";
+  print "   2) Type 2 UCD   17)               32)                  47)                                               \n";
+  print "   3)              18)               33)                  48)                a) Request Frame (minislots)   \n";
+  print "   4) RNG-REQ      19)               34) B-INIT-RNG-REQ   49)                b) Request Frame (bytes)       \n";
+  print "   5)              20)               35) Type 35 UCD      50)                                               \n";
+  print "   6)              21)               36)                  51)                                               \n";
+  print "   7)              22)               37)                  52)                                               \n";
+  print "   8)              23)               38)                  53)                                               \n";
+  print "   9)              24)               39)                  54)                                               \n";
+  print "  10)              25)               40)                  55)                                               \n";
+  print "  11)              26)               41)                  56)                                               \n";
+  print "  12)              27)               42)                  57)                                               \n";
+  print "  13)              28)               43)                  58)                                               \n";
+  print "  14)              29) Type 29 UCD   44)                  59)                                               \n";
+  print "  15)              30)               45)                  60)                                               \n";
   print "\n  Frame " . $frame_number . " - Choose packet type which will be generated:  ";
-
-# Debug info
-# type2UCD();
-# Debug info
 
   $frame_type = <>;
   chomp $frame_type;
@@ -67,8 +65,14 @@ while ($last_frame != 1) {
     case 2 {
       ($packet_value, $packet_length) = type2UCD();
     }
+    case 4 {
+      ($packet_value, $packet_length) = RNG_REQ();
+    }
     case 29 {
       ($packet_value, $packet_length) = type29UCD();
+    }
+    case 34 {
+      ($packet_value, $packet_length) = B_INIT_RNG_REQ();
     }
     case 35 {
       ($packet_value, $packet_length) = type35UCD();
@@ -384,6 +388,25 @@ sub type2UCD() {
   return ($packet_value, $packet_length);
 }
 
+sub RNG_REQ() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Service Identifier
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Downstream Channel ID
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Reserved Field
+  $packet_value = $packet_value . "00";
+  $packet_length = $packet_length + 1;
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "04", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
 sub type29UCD() {
   our $packet_value;
   our $packet_length;
@@ -636,6 +659,28 @@ sub type29UCD() {
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "1D", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub B_INIT_RNG_REQ() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Capabilities Flag
+  $packet_value = random_bits(8, 0xC0);
+  $packet_length = $packet_length + 1;
+  # Add MAC Domain Downstream Service Group
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Downstream Channel ID
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Upstream Channel ID
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "22", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
 }
 
