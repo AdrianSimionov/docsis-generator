@@ -15,13 +15,14 @@ sub type29UCD();
 sub INIT_RNG_REQ();
 sub B_INIT_RNG_REQ();
 sub type35UCD();
+sub DBC_REQ();
+sub DBC_RSP();
+sub DBC_ACK();
 sub REG_REQ_MP();
 sub REG_RSP_MP();
 sub request_minislots();
 sub request_bytes();
 sub random_bits;
-
-# system $^O eq 'MSWin32' ? 'cls' : 'clear';
 
 my $pcap_file = "file.pcap";
 my $packet_length;
@@ -35,6 +36,10 @@ my $frame_type;
 my $clear_screen = 1;
 
 $pcap_header = "D4C3B2A1020004000000000000000000000004008F000000";
+
+if ($clear_screen) {
+  system $^O eq 'MSWin32' ? 'cls' : 'clear';
+}
 
 print "\n  Pcap filename to be saved:  ";
 $pcap_file = <>;
@@ -54,9 +59,9 @@ while ($last_frame != 1) {
   print "   3)              18)                33)                  48)                a) Request Frame (minislots)   \n";
   print "   4) RNG-REQ      19)                34) B-INIT-RNG-REQ   49)                b) Request Frame (bytes)       \n";
   print "   5)              20)                35) Type 35 UCD      50)                                               \n";
-  print "   6) REG-REQ      21)                36)                  51)                                               \n";
-  print "   7) REG-RSP      22)                37)                  52)                                               \n";
-  print "   8)              23)                38)                  53)                                               \n";
+  print "   6) REG-REQ      21)                36) DBC-REQ          51)                                               \n";
+  print "   7) REG-RSP      22)                37) DBC-RSP          52)                                               \n";
+  print "   8)              23)                38) DBC-ACK          53)                                               \n";
   print "   9)              24)                39)                  54)                                               \n";
   print "  10)              25)                40)                  55)                                               \n";
   print "  11)              26)                41)                  56)                                               \n";
@@ -97,6 +102,15 @@ while ($last_frame != 1) {
     }
     case 35 {
       ($packet_value, $packet_length) = type35UCD();
+    }
+    case 36 {
+      ($packet_value, $packet_length) = DBC_REQ();
+    }
+    case 37 {
+      ($packet_value, $packet_length) = DBC_RSP();
+    }
+    case 38 {
+      ($packet_value, $packet_length) = DBC_ACK();
     }
     case 44 {
       ($packet_value, $packet_length) = REG_REQ_MP();
@@ -1069,6 +1083,60 @@ sub type35UCD() {
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "23", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DBC_REQ() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Number of fragments
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Fragment Sequence Number
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "24", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DBC_RSP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Confirmation Code
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "25", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DBC_ACK() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "26", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
 }
 
