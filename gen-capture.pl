@@ -9,10 +9,14 @@ sub SYNC ();
 sub type2UCD();
 sub RNG_REQ();
 sub REG_REQ();
+sub REG_RSP();
+sub REG_ACK();
 sub type29UCD();
 sub INIT_RNG_REQ();
 sub B_INIT_RNG_REQ();
 sub type35UCD();
+sub REG_REQ_MP();
+sub REG_RSP_MP();
 sub request_minislots();
 sub request_bytes();
 sub random_bits;
@@ -51,15 +55,15 @@ while ($last_frame != 1) {
   print "   4) RNG-REQ      19)                34) B-INIT-RNG-REQ   49)                b) Request Frame (bytes)       \n";
   print "   5)              20)                35) Type 35 UCD      50)                                               \n";
   print "   6) REG-REQ      21)                36)                  51)                                               \n";
-  print "   7)              22)                37)                  52)                                               \n";
+  print "   7) REG-RSP      22)                37)                  52)                                               \n";
   print "   8)              23)                38)                  53)                                               \n";
   print "   9)              24)                39)                  54)                                               \n";
   print "  10)              25)                40)                  55)                                               \n";
   print "  11)              26)                41)                  56)                                               \n";
   print "  12)              27)                42)                  57)                                               \n";
   print "  13)              28)                43)                  58)                                               \n";
-  print "  14)              29) Type 29 UCD    44)                  59)                                               \n";
-  print "  15)              30) INIT-RNG-REQ   45)                  60)                                               \n";
+  print "  14) REG-ACK      29) Type 29 UCD    44) REG-REQ-MP       59)                                               \n";
+  print "  15)              30) INIT-RNG-REQ   45) REG-RSP-MP       60)                                               \n";
   print "\n  Frame " . $frame_number . " - Choose packet type which will be generated:  ";
   $frame_type = <>;
   chomp $frame_type;
@@ -76,6 +80,12 @@ while ($last_frame != 1) {
     case 6 {
       ($packet_value, $packet_length) = REG_REQ();
     }
+    case 7 {
+      ($packet_value, $packet_length) = REG_RSP();
+    }
+    case 14 {
+      ($packet_value, $packet_length) = REG_ACK();
+    }
     case 29 {
       ($packet_value, $packet_length) = type29UCD();
     }
@@ -87,6 +97,12 @@ while ($last_frame != 1) {
     }
     case 35 {
       ($packet_value, $packet_length) = type35UCD();
+    }
+    case 44 {
+      ($packet_value, $packet_length) = REG_REQ_MP();
+    }
+    case 45 {
+      ($packet_value, $packet_length) = REG_RSP_MP();
     }
     case "a" {
       ($packet_value, $packet_length) = request_minislots();
@@ -437,6 +453,42 @@ sub REG_REQ() {
   ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
   # Add MAC Management header
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "06", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub REG_RSP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Service Identifier
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Response Code
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "07", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub REG_ACK() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Service Identifier
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Confirmation Code
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "0E", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
@@ -1017,6 +1069,51 @@ sub type35UCD() {
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "23", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub REG_REQ_MP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Service Identifier
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Number of fragments
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Fragment Sequence Number
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "2C", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub REG_RSP_MP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Service Identifier
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Response Code
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Number of fragments
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Fragment Sequence Number
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "2D", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
 }
 
