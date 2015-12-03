@@ -10,10 +10,17 @@ sub type2UCD();
 sub RNG_REQ();
 sub REG_REQ();
 sub REG_RSP();
+sub UCC_REQ();
+sub UCC_RSP();
 sub REG_ACK();
 sub DSA_REQ();
 sub DSA_RSP();
 sub DSA_ACK();
+sub DSC_REQ();
+sub DSC_RSP();
+sub DSC_ACK();
+sub DSD_REQ();
+sub DSD_RSP();
 sub type29UCD();
 sub INIT_RNG_REQ();
 sub B_INIT_RNG_REQ();
@@ -59,13 +66,13 @@ while ($last_frame != 1) {
   print "\n  Following packet types can be generated:\n\n";
   print "   1) SYNC         16) DSA-RSP        31)                  46)               61)                             \n";
   print "   2) Type 2 UCD   17) DSA-ACK        32)                  47)                                               \n";
-  print "   3)              18)                33)                  48)                a) Request Frame (minislots)   \n";
-  print "   4) RNG-REQ      19)                34) B-INIT-RNG-REQ   49)                b) Request Frame (bytes)       \n";
-  print "   5)              20)                35) Type 35 UCD      50)                                               \n";
-  print "   6) REG-REQ      21)                36) DBC-REQ          51)                                               \n";
-  print "   7) REG-RSP      22)                37) DBC-RSP          52)                                               \n";
-  print "   8)              23)                38) DBC-ACK          53)                                               \n";
-  print "   9)              24)                39)                  54)                                               \n";
+  print "   3)              18) DSC-REQ        33)                  48)                a) Request Frame (minislots)   \n";
+  print "   4) RNG-REQ      19) DSC-RSP        34) B-INIT-RNG-REQ   49)                b) Request Frame (bytes)       \n";
+  print "   5)              20) DSC-ACK        35) Type 35 UCD      50)                                               \n";
+  print "   6) REG-REQ      21) DSD-REQ        36) DBC-REQ          51)                                               \n";
+  print "   7) REG-RSP      22) DSD-RSP        37) DBC-RSP          52)                                               \n";
+  print "   8) UCC-REQ      23)                38) DBC-ACK          53)                                               \n";
+  print "   9) UCC-RSP      24)                39)                  54)                                               \n";
   print "  10)              25)                40)                  55)                                               \n";
   print "  11)              26)                41)                  56)                                               \n";
   print "  12)              27)                42)                  57)                                               \n";
@@ -91,6 +98,12 @@ while ($last_frame != 1) {
     case 7 {
       ($packet_value, $packet_length) = REG_RSP();
     }
+    case 8 {
+      ($packet_value, $packet_length) = UCC_REQ();
+    }
+    case 9 {
+      ($packet_value, $packet_length) = UCC_RSP();
+    }
     case 14 {
       ($packet_value, $packet_length) = REG_ACK();
     }
@@ -102,6 +115,21 @@ while ($last_frame != 1) {
     }
     case 17 {
       ($packet_value, $packet_length) = DSA_ACK();
+    }
+    case 18 {
+      ($packet_value, $packet_length) = DSC_REQ();
+    }
+    case 19 {
+      ($packet_value, $packet_length) = DSC_RSP();
+    }
+    case 20 {
+      ($packet_value, $packet_length) = DSC_ACK();
+    }
+    case 21 {
+      ($packet_value, $packet_length) = DSD_REQ();
+    }
+    case 22 {
+      ($packet_value, $packet_length) = DSD_RSP();
     }
     case 29 {
       ($packet_value, $packet_length) = type29UCD();
@@ -502,6 +530,32 @@ sub REG_RSP() {
   return ($packet_value, $packet_length);
 }
 
+sub UCC_REQ() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Upstream Channel ID
+  $packet_value = random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "08", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub UCC_RSP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Upstream Channel ID
+  $packet_value = random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "09", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
 sub REG_ACK() {
   our $packet_value;
   our $packet_length = 0;
@@ -566,6 +620,97 @@ sub DSA_ACK() {
   ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
   # Add MAC Management header
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "11", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DSC_REQ() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "12", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DSC_RSP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Confirmation Code
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "13", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DSC_ACK() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Confirmation Code
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "14", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DSD_REQ() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Reserved field
+  $packet_value = $packet_value . "0000";
+  $packet_length = $packet_length + 2;
+  # Add Service Flow ID
+  $packet_value = $packet_value . random_bits(32, 0xFFFFFFFF);
+  $packet_length = $packet_length + 4;
+  # Add Annex C TLVs
+  ($packet_value, $packet_length) = add_annex_c_tlvs($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "15", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DSD_RSP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Confirmation Code
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Reserved field
+  $packet_value = $packet_value . "00";
+  $packet_length = $packet_length + 1;
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "16", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
