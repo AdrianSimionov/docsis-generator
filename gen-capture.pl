@@ -9,6 +9,7 @@ sub SYNC ();
 sub type2UCD();
 sub Version1_MAP();
 sub RNG_REQ();
+sub RNG_RSP();
 sub REG_REQ();
 sub REG_RSP();
 sub UCC_REQ();
@@ -71,7 +72,7 @@ while ($last_frame != 1) {
   print "  3b) Version 5 MAP   (N/A)   17) DSA-ACK   32)                  47)                                                \n";
   print "  3c) Version 5 P-MAP (N/A)   18) DSC-REQ   33)                  48)               a) Request Frame (minislots)     \n";
   print "   4) RNG-REQ                 19) DSC-RSP   34) B-INIT-RNG-REQ   49)               b) Request Frame (bytes)         \n";
-  print "   5)                         20) DSC-ACK   35) Type 35 UCD      50)                                                \n";
+  print "   5) RNG-RSP                 20) DSC-ACK   35) Type 35 UCD      50)                                                \n";
   print "   6) REG-REQ                 21) DSD-REQ   36) DBC-REQ          51)                                                \n";
   print "   7) REG-RSP                 22) DSD-RSP   37) DBC-RSP          52)                                                \n";
   print "   8) UCC-REQ                 23)           38) DBC-ACK          53)                                                \n";
@@ -95,6 +96,9 @@ while ($last_frame != 1) {
     }
     case 4 {
       ($packet_value, $packet_length) = RNG_REQ();
+    }
+    case 5 {
+      ($packet_value, $packet_length) = RNG_RSP();
     }
     case 6 {
       ($packet_value, $packet_length) = REG_REQ();
@@ -546,6 +550,70 @@ sub RNG_REQ() {
   $packet_length = $packet_length + 1;
   # Add MAC Management header
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "04", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub RNG_RSP() {
+  our $packet_value;
+  our $packet_length = 0;
+  our $last_tlv = 0;
+  our $choosen_tlv;
+  our $tlv_number = 1;
+  our $i;
+  our $j;
+  # Add SID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add Upstream Channel ID
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  while ($last_tlv != 1) {
+    if ($clear_screen) {
+      system $^O eq 'MSWin32' ? 'cls' : 'clear';
+    }
+    print "\n  Following TLVs can be added:\n\n";
+    print "   1) Timing Adjuts, Integer Part\n";
+    print "   2) Power Level Adjust\n";
+    print "   3) Offset Frequency Adjust\n";
+    print "   4) Transmit Equalization Adjust\n";
+    print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
+    $choosen_tlv = <>;
+    chomp $choosen_tlv;
+    switch ($choosen_tlv) {
+      case 1 {
+        $packet_value = $packet_value . "01" . "04" . random_bits(32, 0xFFFFFFFF);
+        $packet_length = $packet_length + 6;
+      }
+      case 2 {
+        $packet_value = $packet_value . "02" . "01" . random_bits(8, 0xFF);
+        $packet_length = $packet_length + 3;
+      }
+      case 3 {
+        $packet_value = $packet_value . "03" . "02" . random_bits(16, 0xFFFF);
+        $packet_length = $packet_length + 4;
+      }
+      case 4 {
+        # Value 32 was choosen random, could not find the maximum value in the spec.
+        $i = int(rand(32)) + 1;
+        $packet_value = $packet_value . "04" . sprintf("%02x", $i);
+        for (my $j = 0; $j < $i; $j++) {
+          $packet_value = $packet_value . sprintf("%02x", rand(0xFF));
+        }
+        $packet_length = $packet_length + $i + 2;
+      }
+      else {
+        print "\n  This is not a valid option. Calling EXIT... \n\n";
+        exit;
+      }
+    }
+    printf "\n  Is this last TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+    $last_tlv = <>;
+    $tlv_number++;
+  }
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "05", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
