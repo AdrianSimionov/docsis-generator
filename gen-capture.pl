@@ -7,6 +7,7 @@ use Switch;
 # Subroutine prototypes
 sub SYNC ();
 sub type2UCD();
+sub Version1_MAP();
 sub RNG_REQ();
 sub REG_REQ();
 sub REG_RSP();
@@ -66,7 +67,7 @@ while ($last_frame != 1) {
   print "\n  Following packet types can be generated:\n\n";
   print "   1) SYNC                    14) REG-ACK   29) Type 29 UCD      44) REG-REQ-MP   59)                               \n";
   print "   2) Type 2 UCD              15) DSA-REQ   30) INIT-RNG-REQ     45) REG-RSP-MP   60)                               \n";
-  print "  3a) Version 1 MAP   (N/A)   16) DSC-RSP   31)                  46)              61)                               \n";
+  print "  3a) Version 1 MAP           16) DSC-RSP   31)                  46)              61)                               \n";
   print "  3b) Version 5 MAP   (N/A)   17) DSA-ACK   32)                  47)                                                \n";
   print "  3c) Version 5 P-MAP (N/A)   18) DSC-REQ   33)                  48)               a) Request Frame (minislots)     \n";
   print "   4) RNG-REQ                 19) DSC-RSP   34) B-INIT-RNG-REQ   49)               b) Request Frame (bytes)         \n";
@@ -88,6 +89,9 @@ while ($last_frame != 1) {
     }
     case 2 {
       ($packet_value, $packet_length) = type2UCD();
+    }
+    case "3a" {
+      ($packet_value, $packet_length) = Version1_MAP();
     }
     case 4 {
       ($packet_value, $packet_length) = RNG_REQ();
@@ -475,6 +479,56 @@ sub type2UCD() {
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "02", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub Version1_MAP() {
+  our $packet_value;
+  our $packet_length = 0;
+  our $elements;
+  our $i;
+  # Add Upstream channel ID
+  $packet_value = random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add UCD Count
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Number of elements
+  $elements = int(rand(240)) + 1;
+  $packet_value = $packet_value . sprintf("%02x", $elements);
+  $packet_length = $packet_length + 1;
+  # Add Reserved
+  $packet_value = $packet_value . "00";
+  $packet_length = $packet_length + 1;
+  # Add Alloc Start Time
+  $packet_value = $packet_value . random_bits(32, 0xFFFFFFFF);
+  $packet_length = $packet_length + 4;
+  # Add Ack Time
+  $packet_value = $packet_value . random_bits(32, 0xFFFFFFFF);
+  $packet_length = $packet_length + 4;
+  # Add Ranging Backoff Start
+  $packet_value = $packet_value . sprintf("%02x", rand(16));
+  $packet_length = $packet_length + 1;
+  # Add Ranging Backoff End
+  $packet_value = $packet_value . sprintf("%02x", rand(16));
+  $packet_length = $packet_length + 1;
+  # Data Backoff Start
+  $packet_value = $packet_value . sprintf("%02x", rand(16));
+  $packet_length = $packet_length + 1;
+  # Data Backoff End
+  $packet_value = $packet_value . sprintf("%02x", rand(16));
+  $packet_length = $packet_length + 1;
+  # Add elements
+  for (my $i=0; $i < $elements; $i++) {
+    # Add element
+    $packet_value = $packet_value . random_bits(32, 0xFFFFFFFF);
+    $packet_length = $packet_length + 4;
+    print $i . " element.\n";
+  }
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "03", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
 }
 
