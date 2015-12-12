@@ -578,6 +578,9 @@ sub RNG_RSP() {
     print "   2) Power Level Adjust\n";
     print "   3) Offset Frequency Adjust\n";
     print "   4) Transmit Equalization Adjust\n";
+    print "   5) Ranging Status\n";
+    print "   6) Downstream frequency override\n";
+    print "   7) Upstream channel ID override\n";
     print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
     $choosen_tlv = <>;
     chomp $choosen_tlv;
@@ -603,10 +606,23 @@ sub RNG_RSP() {
         }
         $packet_length = $packet_length + $i + 2;
       }
+      case 5 {
+        $packet_value = $packet_value . "05" . "01" . sprintf("%02x", int(rand(3)) + 1);
+        $packet_length = $packet_length + 3;
+      }
+      case 6 {
+        $packet_value = $packet_value . "06" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
+        $packet_length = $packet_length + 6;
+      }
+      case 7 {
+        $packet_value = $packet_value . "07" . "01" . random_bits(8, 0xFF);
+        $packet_length = $packet_length + 3;
+      }
       else {
         print "\n  This is not a valid option. Calling EXIT... \n\n";
         exit;
       }
+
     }
     printf "\n  Is this last TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
     $last_tlv = <>;
@@ -1669,15 +1685,16 @@ sub add_annex_c_tlvs {
     chomp $tlv_type;
     switch ($tlv_type) {
       case 1 {
-        $packet_value = $packet_value . "010401020304";
+        $packet_value = $packet_value . "01" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
         $packet_length = $packet_length + 6;
+
       }
       case 2 {
-        $packet_value = $packet_value . "020102";
+        $packet_value = $packet_value . "02" . "01" . random_bits(8, 0xFF);
         $packet_length = $packet_length + 3;
       }
       case 3 {
-        $packet_value = $packet_value . "020103";
+        $packet_value = $packet_value . "03" . "01" . random_bits(8, 0x01);
         $packet_length = $packet_length + 3;
       }
       else {
