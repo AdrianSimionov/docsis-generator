@@ -1668,8 +1668,13 @@ sub add_annex_c_tlvs {
   our $packet_value;
   our $packet_length;
   our $last_tlv = 0;
+  our $last_sub_tlv = 0;
   our $tlv_number = 1;
   our $tlv_type;
+  our $sub_tlv_number = 0;
+  our $sub_tlv_type;
+  our $sub_tlv_length = 0;
+  our $sub_tlv_value = "";
   $packet_value = $_[0];
   $packet_length = $_[1];
   while ($last_tlv != 1) {
@@ -1680,6 +1685,7 @@ sub add_annex_c_tlvs {
     print "   1) Downstream Frequency\n";
     print "   2) Upstream Channel ID\n";
     print "   3) Network Access\n";
+    print "   4) DOCSIS 1.0 Class of Service\n";
     print "\n  TLV " . $tlv_number . " - Choose which TLV will be generated:  ";
     $tlv_type = <>;
     chomp $tlv_type;
@@ -1696,6 +1702,63 @@ sub add_annex_c_tlvs {
       case 3 {
         $packet_value = $packet_value . "03" . "01" . random_bits(8, 0x01);
         $packet_length = $packet_length + 3;
+      }
+      case 4 {
+        while ($last_sub_tlv != 1) {
+          if ($clear_screen) {
+            system $^O eq 'MSWin32' ? 'cls' : 'clear';
+          }
+          print "\n  Class of Service sub-TLVs which can be added:\n\n";
+          print "  1) Class ID\n";
+          print "  2) Maximum Downstream Rate\n";
+          print "  3) Maximum Upstream Rate\n";
+          print "  4) Upstream Channel Priority\n";
+          print "  5) Guaranteed Minimum Upstream Chanel Data Rate\n";
+          print "  6) Maximum Upstream Channel Transmit Burst\n";
+          print "  7) Class-of-Service Privacy Enable\n";
+          print "\n  sub-TLV " . $sub_tlv_number . " - Choose which TLV will be generated:  ";
+          $sub_tlv_type = <>;
+          chomp $sub_tlv_type;
+          switch ($sub_tlv_type) {
+            case 1 {
+              $sub_tlv_value = $sub_tlv_value . "01" . "01" . sprintf("%02x", (int(rand(16)) + 1));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 2 {
+              $sub_tlv_value = $sub_tlv_value . "02" . "04" . random_bits(32, 0x00FF0000);
+              $sub_tlv_length = $sub_tlv_length + 6;
+            }
+            case 3 {
+              $sub_tlv_value = $sub_tlv_value . "03" . "04" . random_bits(32, 0x00FF0000);
+              $sub_tlv_length = $sub_tlv_length + 6;
+            }
+            case 4 {
+              $sub_tlv_value = $sub_tlv_value . "04" . "01" . sprintf("%02x", (int(rand(8))));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 5 {
+              $sub_tlv_value = $sub_tlv_value . "05" . "04" . random_bits(32, 0x00FF0000);
+              $sub_tlv_length = $sub_tlv_length + 6;
+            }
+            case 6 {
+              $sub_tlv_value = $sub_tlv_value . "06" . "02" . random_bits(16, 0xFF00);
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 7 {
+              $sub_tlv_value = $sub_tlv_value . "07" . "01" . sprintf("%02x", (int(rand(2))));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            else {
+              print "\n  This is not a valid option. Calling EXIT... \n\n";
+              exit;
+            }
+          }
+          print "\n  Is this last sub-TLV for this packet? (Choose: 1 for YES / 0 for NO)  ";
+          $last_sub_tlv = <>;
+          $sub_tlv_number++;
+        }
+        $packet_value = $packet_value . "04" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+        $packet_length = $packet_length + $sub_tlv_length + 2;
       }
       else {
         print "\n  This is not a valid option. Calling EXIT... \n\n";
