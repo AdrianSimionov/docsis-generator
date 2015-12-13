@@ -23,6 +23,7 @@ sub DSC_RSP();
 sub DSC_ACK();
 sub DSD_REQ();
 sub DSD_RSP();
+sub DCC_REQ();
 sub type29UCD();
 sub INIT_RNG_REQ();
 sub B_INIT_RNG_REQ();
@@ -75,7 +76,7 @@ while ($last_frame != 1) {
   print "   5) RNG-RSP                 20) DSC-ACK   35) Type 35 UCD      50)                                                \n";
   print "   6) REG-REQ                 21) DSD-REQ   36) DBC-REQ          51)                                                \n";
   print "   7) REG-RSP                 22) DSD-RSP   37) DBC-RSP          52)                                                \n";
-  print "   8) UCC-REQ                 23)           38) DBC-ACK          53)                                                \n";
+  print "   8) UCC-REQ                 23) DCC-REQ   38) DBC-ACK          53)                                                \n";
   print "   9) UCC-RSP                 24)           39)                  54)                                                \n";
   print "  10)                         25)           40)                  55)                                                \n";
   print "  11)                         26)           41)                  56)                                                \n";
@@ -138,6 +139,9 @@ while ($last_frame != 1) {
     }
     case 22 {
       ($packet_value, $packet_length) = DSD_RSP();
+    }
+    case 23 {
+      ($packet_value, $packet_length) = DCC_REQ();
     }
     case 29 {
       ($packet_value, $packet_length) = type29UCD();
@@ -849,6 +853,186 @@ sub DSD_RSP() {
   $packet_length = $packet_length + 1;
   # Add MAC Management header
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "16", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub DCC_REQ () {
+  our $packet_value;
+  our $packet_length = 0;
+  our $tlv_number = 1;
+  our $tlv_type;
+  our $sub_tlv_number = 1;
+  our $sub_tlv_type;
+  our $sub_tlv_length = 0;
+  our $sub_tlv_value = "";
+  our $last_tlv = 0;
+  our $last_sub_tlv = 0;
+  # Add Transaction ID
+  $packet_value = random_bits(16, 0xFFFF);
+  $packet_length = $packet_length + 2;
+  # Add TLV Encoded information
+  while ($last_tlv != 1) {
+    if ($clear_screen) {
+      system $^O eq 'MSWin32' ? 'cls' : 'clear';
+    }
+    print "\n  Following TLVs can be added:\n\n";
+    print "   1) Upstream Channel ID\n";
+    print "   2) Downstream Parameters\n";
+    print "      ...\n";
+    print "   3) Initialization Technique\n";
+    print "   4) UCD Substitution\n";
+    print "   6) Security Association Identifier (SAID) Substitution\n";
+    print "   7) Service Flow Substitutions\n";
+    print "     ...\n";
+    print "   8) CMTS MAC Address\n";
+    print "  27) HMAC-Digest\n";
+    print "  31) Key Sequence Number\n";
+    print "\n  TLV " . $tlv_number . " - Choose which TLV will be generated:  ";
+    $tlv_type = <>;
+    chomp $tlv_type;
+    switch ($tlv_type) {
+      case 1 {
+        $packet_value = $packet_value . "01" . "01" . random_bits(8, 0xFF);
+        $packet_length = $packet_length + 3;
+      }
+      case 2 {
+        $sub_tlv_value = "";
+        $sub_tlv_length = 0;
+        $last_sub_tlv = 0;
+        while ($last_sub_tlv != 1) {
+          if ($clear_screen) {
+            system $^O eq 'MSWin32' ? 'cls' : 'clear';
+          }
+          print "\n  Class of Service sub-TLVs which can be added:\n\n";
+          print "  1) Downstream Frequency\n";
+          print "  2) Downstream Modulation Type\n";
+          print "  3) Downstream Symbol Rate\n";
+          print "  4) Downstream Interleaver Depth\n";
+          print "  5) Downstream Channel Identifier\n";
+          print "  6) SYNC Substitution\n";
+          print "  7) OFDM Block Frequency\n";
+          print "\n  sub-TLV " . $sub_tlv_number . " - Choose which TLV will be generated:  ";
+          $sub_tlv_type = <>;
+          chomp $sub_tlv_type;
+          switch ($sub_tlv_type) {
+            case 1 {
+              $sub_tlv_value = $sub_tlv_value . "01" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
+              $sub_tlv_length = $sub_tlv_length + 6;
+            }
+            case 2 {
+              $sub_tlv_value = $sub_tlv_value . "02" . "01" . sprintf("%02x", (int(rand(3))));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 3 {
+              $sub_tlv_value = $sub_tlv_value . "03" . "01" . sprintf("%02x", (int(rand(3))));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 4 {
+              $sub_tlv_value = $sub_tlv_value . "04" . "02" . random_bits(16, 0xFFFF);
+              $sub_tlv_length = $sub_tlv_length + 4;
+            }
+            case 5 {
+              $sub_tlv_value = $sub_tlv_value . "05" . "01" . random_bits(8, 0xFF);
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 6 {
+              $sub_tlv_value = $sub_tlv_value . "06" . "01" . sprintf("%02x", (int(rand(2))));
+              $sub_tlv_length = $sub_tlv_length + 3;
+            }
+            case 7 {
+              $sub_tlv_value = $sub_tlv_value . "07" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
+              $sub_tlv_length = $sub_tlv_length + 6;
+            }
+            else {
+              print "\n  This is not a valid option. Calling EXIT... \n\n";
+              exit;
+            }
+          }
+          print "\n  Is this last sub-TLV for this packet? (Choose: 1 for YES / 0 for NO)  ";
+          $last_sub_tlv = <>;
+          $sub_tlv_number++;
+        }
+        $packet_value = $packet_value . "02" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+        $packet_length = $packet_length + $sub_tlv_length + 2;
+      }
+      case 3 {
+        $packet_value = $packet_value . "03" . "01" . sprintf("%02x", (int(rand(5))));
+        $packet_length = $packet_length + 3;
+      }
+      case 4 {
+        # TODO This has to be a full UCD packet
+        $packet_value = $packet_value . "04" . "10" . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF);
+        $packet_length = $packet_length + 18;
+      }
+      case 6 {
+        $packet_value = $packet_value . "06" . "04" . random_bits(16, 0x3FFF) . random_bits(16, 0x3FFF);
+        $packet_length = $packet_length + 6;
+      }
+      case 7 {
+        $sub_tlv_value = "";
+        $sub_tlv_length = 0;
+        $last_sub_tlv = 0;
+        while ($last_sub_tlv != 1) {
+          if ($clear_screen) {
+            system $^O eq 'MSWin32' ? 'cls' : 'clear';
+          }
+          print "\n  Class of Service sub-TLVs which can be added:\n\n";
+          print "  1) Service Flow Identifier Substitution\n";
+          print "  2) Service Identifier Substitution\n";
+          print "  5) Unsolicited Grant Time Reference Substitution\n";
+          print "\n  sub-TLV " . $sub_tlv_number . " - Choose which TLV will be generated:  ";
+          $sub_tlv_type = <>;
+          chomp $sub_tlv_type;
+          switch ($sub_tlv_type) {
+            case 1 {
+              $sub_tlv_value = $sub_tlv_value . "01" . "08" . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF);
+              $sub_tlv_length = $sub_tlv_length + 10;
+            }
+            case 2 {
+              $sub_tlv_value = $sub_tlv_value . "02" . "04" . random_bits(16, 0x3FFF) . random_bits(16, 0x3FFF);
+              $sub_tlv_length = $sub_tlv_length + 6;
+            }
+            case 5 {
+              $sub_tlv_value = $sub_tlv_value . "05" . "04" . random_bits(32, 0xFFFFFFFF);
+              $sub_tlv_length = $sub_tlv_length + 6;
+            }
+            else {
+              print "\n  This is not a valid option. Calling EXIT... \n\n";
+              exit;
+            }
+          }
+          print "\n  Is this last sub-TLV for this packet? (Choose: 1 for YES / 0 for NO)  ";
+          $last_sub_tlv = <>;
+          $sub_tlv_number++;
+        }
+        $packet_value = $packet_value . "07" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+        $packet_length = $packet_length + $sub_tlv_length + 2;
+      }
+      case 8 {
+        $packet_value = $packet_value . "08" . "06" . random_bits(24, 0xFFFFFF) . random_bits(24, 0xFFFFFF);
+        $packet_length = $packet_length + 8;
+      }
+      case 27 {
+        $packet_value = $packet_value . "1B" . "14" . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFF) . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF);
+        $packet_length = $packet_length + 22;
+      }
+      case 31 {
+        $packet_value = $packet_value . "1F" . "01" . sprintf("%02x", (int(rand(16))));
+        $packet_length = $packet_length + 3;
+      }
+      else {
+        print "\n  This is not a valid option. Calling EXIT... \n\n";
+        exit;
+      }
+    }
+    print "\n  Is this last TLV for this packet? (Choose: 1 for YES / 0 for NO)  ";
+    $last_tlv = <>;
+    $tlv_number++;
+  }
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "17", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 0, 0);
   return ($packet_value, $packet_length);
@@ -1671,7 +1855,7 @@ sub add_annex_c_tlvs {
   our $last_sub_tlv = 0;
   our $tlv_number = 1;
   our $tlv_type;
-  our $sub_tlv_number = 0;
+  our $sub_tlv_number = 1;
   our $sub_tlv_type;
   our $sub_tlv_length = 0;
   our $sub_tlv_value = "";
@@ -1693,7 +1877,6 @@ sub add_annex_c_tlvs {
       case 1 {
         $packet_value = $packet_value . "01" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
         $packet_length = $packet_length + 6;
-
       }
       case 2 {
         $packet_value = $packet_value . "02" . "01" . random_bits(8, 0xFF);
