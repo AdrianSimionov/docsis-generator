@@ -1798,6 +1798,7 @@ sub add_annex_c_tlvs {
     print "   2) Upstream Channel ID\n";
     print "   3) Network Access\n";
     print "   4) DOCSIS 1.0 Class of Service\n";
+    print "      ...\n";
     print "\n  TLV " . $tlv_number . " - Choose which TLV will be generated:  ";
     $tlv_type = <>;
     chomp $tlv_type;
