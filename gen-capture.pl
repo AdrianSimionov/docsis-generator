@@ -462,7 +462,6 @@ sub Version1_MAP() {
     # Add element
     $packet_value = $packet_value . random_bits(32, 0xFFFFFFFF);
     $packet_length = $packet_length + 4;
-    print $i . " element.\n";
   }
   # Add MAC Management header
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "03", "00");
