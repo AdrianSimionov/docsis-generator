@@ -13,6 +13,8 @@ sub REG_REQ();
 sub REG_RSP();
 sub UCC_REQ();
 sub UCC_RSP();
+sub BPKM_REQ();
+sub BPKM_RSP();
 sub REG_ACK();
 sub DSA_REQ();
 sub DSA_RSP();
@@ -81,8 +83,8 @@ while ($last_frame != 1) {
   print "   9) UCC-RSP                 24) DCC-RSP   39)                  54)                                                \n";
   print "  10)                         25) DCC-ACK   40)                  55)                                                \n";
   print "  11)                         26)           41)                  56)                                                \n";
-  print "  12)                         27)           42)                  57)                                                \n";
-  print "  13)                         28)           43)                  58)                                                \n";
+  print "  12) BPKM-REQ                27)           42)                  57)                                                \n";
+  print "  13) BPKM-RSP                28)           43)                  58)                                                \n";
   print "\n  Frame " . $frame_number . " - Choose packet type which will be generated:  ";
   $frame_type = <>;
   chomp $frame_type;
@@ -104,6 +106,10 @@ while ($last_frame != 1) {
     ($packet_value, $packet_length) = UCC_REQ();
   } elsif ($frame_type eq "9") {
     ($packet_value, $packet_length) = UCC_RSP();
+  } elsif ($frame_type eq "12") {
+    ($packet_value, $packet_length) = BPKM_REQ();
+  } elsif ($frame_type eq "13") {
+    ($packet_value, $packet_length) = BPKM_RSP();
   } elsif ($frame_type eq "14") {
     ($packet_value, $packet_length) = REG_ACK();
   } elsif ($frame_type eq "15") {
@@ -613,6 +619,42 @@ sub UCC_RSP() {
   $packet_length = $packet_length + 1;
   # Add MAC Management header
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "09", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub BPKM_REQ() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Code Field
+  $packet_value = sprintf("%02x", (int(rand(16))));
+  $packet_length = $packet_length + 1;
+  # Add Identifier Field
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Attributes
+  ($packet_value, $packet_length) = add_bpkm_attributes($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "0C", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub BPKM_RSP() {
+  our $packet_value;
+  our $packet_length = 0;
+  # Add Code Field
+  $packet_value = sprintf("%02x", (int(rand(16))));
+  $packet_length = $packet_length + 1;
+  # Add Identifier Field
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Attributes
+  ($packet_value, $packet_length) = add_bpkm_attributes($packet_value, $packet_length);
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "0D", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
   return ($packet_value, $packet_length);
@@ -1759,7 +1801,7 @@ sub add_docsis () {
 }
 
 sub random_bits {
-  our $i = 0;
+  my $i = 0;
   our $value = "";
   our $binary = "";
   our @input = @_;
@@ -1865,5 +1907,341 @@ sub add_annex_c_tlvs {
     $last_tlv = <>;
     $tlv_number++;
   }
+  return ($packet_value, $packet_length);
+}
+
+sub add_bpkm_attributes() {
+  our @input = @_;
+  our $packet_value;
+  our $packet_length;
+  our $tlv_number = 1;
+  our $tlv_type;
+  our $last_tlv = 0;
+  our @ISO8859_1;
+  our $i;
+  our $j;
+  our $this_attribute_length;
+  our $attributes_length = 0;
+  our $attributes_value = "";
+  our $compound_attributes_length = 0;
+  our $compound_attributes_value = "";
+  our @DES_length;
+  our @AuthKey;
+  our @TEK;
+  our $compound_length = 0;
+  our $compound_value = "";
+  our $vendor_defined_length;
+  our @CryptoSuite;
+  $packet_value = $input[0];
+  $packet_length = $input[1];
+  while ($last_tlv != 1) {
+    if ($clear_screen) {
+      system $^O eq 'MSWin32' ? 'cls' : 'clear';
+    }
+    print "\n  Following Attributes can be added:\n\n";
+    print "    1) Serial Number\n";
+    print "    2) Manufacturer ID\n";
+    print "    3) MAC Address\n";
+    print "    4) RSA Public Key\n";
+    print "    5) CM Identification\n";
+    print "    6) Display String\n";
+    print "    7) Authorization Key\n";
+    print "    8) Encrypted Traffic Encryption Key (TEK)\n";
+    print "    9) Key Lifetime\n";
+    print "   10) Key Sequence Number\n";
+    print "   11) HMAC Digesh\n";
+    print "   12) SAID\n";
+    print "   13) TEK-Parameters\n";
+    print "   15) Cipher Block Chaining (CBC) Initialization Vector\n";
+    print "   16) Error Code\n";
+    print "   17) CA Certificate\n";
+    print "   18) CM Certificate\n";
+    print "   19) Security Capabilities\n";
+    print "   20) Cryptographic Suite\n";
+    print "   21) Cryptographic Suite List\n";
+    print "   22) BPI Version\n";
+    print "   23) SA Descriptor\n";
+    print "   24) SA Type\n";
+    print "   25) SA Query\n";
+    print "   26) SA Query Type\n";
+    print "   27) IPv4 Address\n";
+    print "  127) Vendor Defined\n";
+    print "\n  Attribute " . $tlv_number . " - Choose which Attribute will be generated:  ";
+    $tlv_type = <>;
+    chomp $tlv_type;
+    if ($tlv_type eq "1") {
+      $this_attribute_length = int(rand(10)) + 10;
+      $attributes_value = $attributes_value . "01" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      @ISO8859_1 = ("41", "42", "43", "44", "45", "46", "47", "48", "49", "4A",
+                    "4B", "4C", "4D", "4E", "4F", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "5A", "61", "62", "63", "64",
+                    "65", "66", "67", "68", "69", "6A", "6B", "6C", "6D", "6E",
+                    "6F", "70", "71", "72", "73", "74", "75", "76", "77", "78",
+                    "79", "7A", "30", "31", "32", "33", "34", "35", "36", "37",
+                    "38", "39", "2D");
+      for ($i = 1; $i <= $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . $ISO8859_1[rand(@ISO8859_1)];
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+    } elsif ($tlv_type eq "2") {
+      $attributes_value = $attributes_value . "02" . "0003";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(8, 0xFF) . random_bits(8, 0xFF) . random_bits(8, 0xFF);
+      $attributes_length = $attributes_length + 3;
+    } elsif ($tlv_type eq "3") {
+      $attributes_value = $attributes_value . "03" . "0006";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(24, 0xFFFFFF) . random_bits(24, 0xFFFFFF);
+      $attributes_length = $attributes_length + 6;
+    } elsif ($tlv_type eq "4") {
+      @DES_length = (106, 140, 270);
+      $this_attribute_length = $DES_length[rand(@DES_length)];
+      $attributes_value = $attributes_value . "04" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+    } elsif ($tlv_type eq "5") {
+      $compound_attributes_value = "";
+      $compound_attributes_length = 0;
+      $compound_value = "";
+      $compound_length = 0;
+      $this_attribute_length = int(rand(10)) + 10;
+      $compound_attributes_value = $compound_attributes_value . "01" . sprintf("%04x", $this_attribute_length);
+      $compound_attributes_length = $compound_attributes_length + 3;
+      @ISO8859_1 = ("41", "42", "43", "44", "45", "46", "47", "48", "49", "4A",
+                    "4B", "4C", "4D", "4E", "4F", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "5A", "61", "62", "63", "64",
+                    "65", "66", "67", "68", "69", "6A", "6B", "6C", "6D", "6E",
+                    "6F", "70", "71", "72", "73", "74", "75", "76", "77", "78",
+                    "79", "7A", "30", "31", "32", "33", "34", "35", "36", "37",
+                    "38", "39", "2D");
+      for ($i = 1; $i <= $this_attribute_length; $i++) {
+        $compound_attributes_value = $compound_attributes_value . $ISO8859_1[rand(@ISO8859_1)];
+      }
+      $compound_attributes_length = $compound_attributes_length + $this_attribute_length;
+      $compound_attributes_value = $compound_attributes_value . "02" . "0003";
+      $compound_attributes_length = $compound_attributes_length + 3;
+      $compound_attributes_value = $compound_attributes_value . random_bits(8, 0xFF) . random_bits(8, 0xFF) . random_bits(8, 0xFF);
+      $compound_attributes_length = $compound_attributes_length + 3;
+      $compound_attributes_value = $compound_attributes_value . "03" . "0006";
+      $compound_attributes_length = $compound_attributes_length + 3;
+      $compound_attributes_value = $compound_attributes_value . random_bits(24, 0xFFFFFF) . random_bits(24, 0xFFFFFF);
+      $compound_attributes_length = $compound_attributes_length + 6;
+      @DES_length = (106, 140, 270);
+      $this_attribute_length = $DES_length[rand(@DES_length)];
+      $compound_attributes_value = $compound_attributes_value . "04" . sprintf("%04x", $this_attribute_length);
+      $compound_attributes_length = $compound_attributes_length + 3;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $compound_attributes_value = $compound_attributes_value . random_bits(8, 0xFF);
+      }
+      $compound_attributes_length = $compound_attributes_length + $this_attribute_length;
+      $compound_value = $compound_value . "02" . "0003";
+      $compound_length = $compound_length +3;
+      $compound_value = $compound_value . random_bits(8, 0xFF) . random_bits(8, 0xFF) . random_bits(8, 0xFF);
+      $compound_length = $compound_length +3;
+      for ($i = 0; $i < rand(10); $i++) {
+        $vendor_defined_length = int(rand(12)) + 1;
+        $compound_value = $compound_value . random_bits(8, 0xFE) . sprintf("%04x", $vendor_defined_length);
+        for ($j = 0; $j < $vendor_defined_length; $j++) {
+          $compound_value = $compound_value . random_bits(8, 0xFF);
+        }
+        $compound_length = $compound_length + 1 + 2 + $vendor_defined_length;
+      }
+      $compound_attributes_value = $compound_attributes_value . "7F" . sprintf("%04x", $compound_length) . $compound_value;
+      $compound_attributes_length = $compound_attributes_length + 1 + 2 + $compound_length;
+      $attributes_value = $attributes_value . "05" . sprintf("%04x", $compound_attributes_length) . $compound_attributes_value;
+      $attributes_length = $attributes_length + 1 + 2 + $compound_attributes_length;
+    } elsif ($tlv_type eq "6") {
+      $this_attribute_length = int(rand(118)) + 10;
+      $attributes_value = $attributes_value . "06" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      @ISO8859_1 = ("41", "42", "43", "44", "45", "46", "47", "48", "49", "4A",
+                    "4B", "4C", "4D", "4E", "4F", "50", "51", "52", "53", "54",
+                    "55", "56", "57", "58", "59", "5A", "61", "62", "63", "64",
+                    "65", "66", "67", "68", "69", "6A", "6B", "6C", "6D", "6E",
+                    "6F", "70", "71", "72", "73", "74", "75", "76", "77", "78",
+                    "79", "7A", "30", "31", "32", "33", "34", "35", "36", "37",
+                    "38", "39", "2D");
+      for ($i = 1; $i <= $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . $ISO8859_1[rand(@ISO8859_1)];
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+    } elsif ($tlv_type eq "7") {
+      @AuthKey = (96, 128);
+      $this_attribute_length = $AuthKey[rand(@AuthKey)];
+      $attributes_value = $attributes_value . "07" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+    } elsif ($tlv_type eq "8") {
+      @TEK = (8, 16);
+      $this_attribute_length = $TEK[rand(@TEK)];
+      $attributes_value = $attributes_value . "08" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+    } elsif ($tlv_type eq "9") {
+      $attributes_value = $attributes_value . "09" . "0004";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(32, 0xFFFFFFFF);
+      $attributes_length = $attributes_length + 4;
+    } elsif ($tlv_type eq "10") {
+      $attributes_value = $attributes_value . "0A" . "0001";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(8, 0x0F);
+      $attributes_length = $attributes_length + 1;
+    } elsif ($tlv_type eq "11") {
+      $attributes_value = $attributes_value . "0B" . "0014";
+      $attributes_length = $attributes_length + 3;
+      for ($i = 0; $i < 20; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+      $attributes_length = $attributes_length + 20;
+    } elsif ($tlv_type eq "12") {
+      $attributes_value = $attributes_value . "0C" . "0002";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(16, 0x3FFF);
+      $attributes_length = $attributes_length + 2;
+    } elsif ($tlv_type eq "13") {
+      @TEK = (8, 16);
+      $this_attribute_length = $TEK[rand(@TEK)];
+      if ($this_attribute_length == 8) {
+        $attributes_value = $attributes_value . "0D" . "0021";
+        $attributes_length = $attributes_length + 3;
+      } elsif ($this_attribute_length == 16) {
+        $attributes_value = $attributes_value . "0D" . "0031";
+        $attributes_length = $attributes_length + 3;
+      }
+      $attributes_value = $attributes_value . "08" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+      $attributes_value = $attributes_value . "09" . "0004";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(32, 0xFFFFFFFF);
+      $attributes_length = $attributes_length + 4;
+      $attributes_value = $attributes_value . "0A" . "0001";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(8, 0x0F);
+      $attributes_length = $attributes_length + 1;
+      $attributes_value = $attributes_value . "0F" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+    } elsif ($tlv_type eq "15") {
+      @TEK = (8, 16);
+      $this_attribute_length = $TEK[rand(@TEK)];
+      $attributes_value = $attributes_value . "0F" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 3;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+      $attributes_length = $attributes_length + $this_attribute_length;
+    } elsif ($tlv_type eq "16") {
+      $attributes_value = $attributes_value . "10" . "0001";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . sprintf("%02x", int(rand(11)));
+      $attributes_length = $attributes_length + 1;
+    } elsif ($tlv_type eq "127") {
+      $compound_value = "";
+      $compound_length = 0;
+      $compound_value = $compound_value . "02" . "0003";
+      $compound_length = $compound_length +3;
+      $compound_value = $compound_value . random_bits(8, 0xFF) . random_bits(8, 0xFF) . random_bits(8, 0xFF);
+      $compound_length = $compound_length +3;
+      for ($i = 0; $i < rand(10); $i++) {
+        $vendor_defined_length = int(rand(12)) + 1;
+        $compound_value = $compound_value . random_bits(8, 0xFE) . sprintf("%04x", $vendor_defined_length);
+        for ($j = 0; $j < $vendor_defined_length; $j++) {
+          $compound_value = $compound_value . random_bits(8, 0xFF);
+        }
+        $compound_length = $compound_length + 1 + 2 + $vendor_defined_length;
+      }
+      $attributes_value = $attributes_value . "7F" . sprintf("%04x", $compound_length) . $compound_value;
+      $attributes_length = $attributes_length + 1 + 2 + $compound_length;
+    } elsif ($tlv_type eq "17") {
+      $this_attribute_length = int(rand(128)) + 128;
+      $attributes_value = $attributes_value . "11" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 1 + 2 + $this_attribute_length;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+    } elsif ($tlv_type eq "18") {
+      $this_attribute_length = int(rand(128)) + 128;
+      $attributes_value = $attributes_value . "12" . sprintf("%04x", $this_attribute_length);
+      $attributes_length = $attributes_length + 1 + 2 + $this_attribute_length;
+      for ($i = 0; $i < $this_attribute_length; $i++) {
+        $attributes_value = $attributes_value . random_bits(8, 0xFF);
+      }
+    } elsif ($tlv_type eq "19") {
+      $attributes_value = $attributes_value . "13" . "000D";
+      $attributes_length = $attributes_length + 1 + 2;
+      $attributes_value = $attributes_value . "15" . "0006" . "010002000300";
+      $attributes_length = $attributes_length + 1 + 2 + 6;
+      $attributes_value = $attributes_value . "16" . "0001" . sprintf("%02x", int(rand(2)));
+      $attributes_length = $attributes_length + 1 + 2 + 1;
+    } elsif ($tlv_type eq "20") {
+      @CryptoSuite = ("0100", "0200", "0300");
+      $attributes_value = $attributes_value . "14" . "0002" . $CryptoSuite[rand(@CryptoSuite)];
+      $attributes_length = $attributes_length + 1 + 2 + 2;
+    } elsif ($tlv_type eq "21") {
+      $attributes_value = $attributes_value . "15" . "0006" . "010002000300";
+      $attributes_length = $attributes_length + 1 + 2 + 6;
+    } elsif ($tlv_type eq "22") {
+      $attributes_value = $attributes_value . "16" . "0001" . sprintf("%02x", int(rand(2)));
+      $attributes_length = $attributes_length + 1 + 2 + 1;
+    } elsif ($tlv_type eq "23") {
+      $attributes_value = $attributes_value . "17" . "000E";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . "0C" . "0002";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . random_bits(16, 0x3FFF);
+      $attributes_length = $attributes_length + 2;
+      $attributes_value = $attributes_value . "18" . "0001" . sprintf("%02x", int(rand(3)));
+      $attributes_length = $attributes_length + 1 + 2 + 1;
+      @CryptoSuite = ("0100", "0200", "0300");
+      $attributes_value = $attributes_value . "14" . "0002" . $CryptoSuite[rand(@CryptoSuite)];
+      $attributes_length = $attributes_length + 1 + 2 + 2;
+    } elsif ($tlv_type eq "24") {
+      $attributes_value = $attributes_value . "18" . "0001" . sprintf("%02x", int(rand(3)));
+      $attributes_length = $attributes_length + 1 + 2 + 1;
+    } elsif ($tlv_type eq "25") {
+      $attributes_value = $attributes_value . "19" . "000B";
+      $attributes_length = $attributes_length + 3;
+      $attributes_value = $attributes_value . "1A" . "0001" . random_bits(8, 0xFF);
+      $attributes_length = $attributes_length + 1 + 2 + 1;
+      $attributes_value = $attributes_value . "1B" . "0004" . random_bits(32, 0xFEFFFFFF);
+      $attributes_length = $attributes_length + 1 + 2 + 4;
+    } elsif ($tlv_type eq "26") {
+      $attributes_value = $attributes_value . "1A" . "0001" . random_bits(8, 0xFF);
+      $attributes_length = $attributes_length + 1 + 2 + 1;
+    } elsif ($tlv_type eq "27") {
+      $attributes_value = $attributes_value . "1B" . "0004" . random_bits(32, 0xFEFFFFFF);
+      $attributes_length = $attributes_length + 1 + 2 + 4;
+    } else {
+      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      exit;
+    }
+    print "\n  Is this last Attribute for this packet? (Choose: 1 for YES / 0 for NO)  ";
+    $last_tlv = <>;
+    $tlv_number++;
+  }
+  # Add Attributes Length
+  $packet_value = $packet_value . sprintf("%04x", $attributes_length);
+  $packet_length = $packet_length + 2;
+  # Add Attributes Value
+  $packet_value = $packet_value . $attributes_value;
+  $packet_length = $packet_length + $attributes_length;
   return ($packet_value, $packet_length);
 }
