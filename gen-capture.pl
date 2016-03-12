@@ -70,21 +70,21 @@ while ($last_frame != 1) {
     system $^O eq 'MSWin32' ? 'cls' : 'clear';
   }
   print "\n  Following packet types can be generated:\n\n";
-  print "   1) SYNC                    14) REG-ACK         29) Type 29 UCD      44) REG-REQ-MP              59) DTP-ACK (N/A)               \n";
-  print "   2) Type 2 UCD              15) DSA-REQ         30) INIT-RNG-REQ     45) REG-RSP-MP              60) DTP-INFO (N/A)              \n";
-  print "  3a) Version 1 MAP           16) DSC-RSP         31) TST-REQ (N/A)    46) EM-REQ (N/A)                                            \n";
-  print "  3b) Version 5 MAP   (N/A)   17) DSA-ACK         32)                  47) EM-RSP (N/A)                                            \n";
-  print "  3c) Version 5 P-MAP (N/A)   18) DSC-REQ         33)                  48) CM-STATUS-ACK (N/A)      a) Request Frame (minislots)   \n";
-  print "   4) RNG-REQ                 19) DSC-RSP         34) B-INIT-RNG-REQ   49) OFDM Chan Descr (N/A)    b) Request Frame (bytes)       \n";
-  print "   5) RNG-RSP                 20) DSC-ACK         35) Type 35 UCD      50) DPD (N/A)                c) O-INIT-RNG-REQ (N/A)        \n";
-  print "   6) REG-REQ                 21) DSD-REQ         36) DBC-REQ          51)                                                         \n";
-  print "   7) REG-RSP                 22) DSD-RSP         37) DBC-RSP          52) ODS-REQ (N/A)                                           \n";
-  print "   8) UCC-REQ                 23) DCC-REQ         38) DBC-ACK          53) ODS-RSP (N/A)                                           \n";
-  print "   9) UCC-RSP                 24) DCC-RSP         39) DPV-REQ (N/A)    54) OPT-REQ (N/A)                                           \n";
-  print "  10) TRI-TCD (N/A)           25) DCC-ACK         40) DPV-RSP (N/A)    55) OPT-RSP (N/A)                                           \n";
-  print "  11) TRI-TSI (N/A)           26) DCI-REQ (N/A)   41)                  56) OPT-ACK (N/A)                                           \n";
-  print "  12) BPKM-REQ                27) DCI-RSP (N/A)   42)                  57) DTP-REQ (N/A)                                           \n";
-  print "  13) BPKM-RSP                28) UP-DIS (N/A)    43)                  58) DTP-RSP (N/A)                                           \n";
+  print "   1) SYNC                    14) REG-ACK         29) Type 29 UCD        44) REG-REQ-MP              59) DTP-ACK (N/A)               \n";
+  print "   2) Type 2 UCD              15) DSA-REQ         30) INIT-RNG-REQ       45) REG-RSP-MP              60) DTP-INFO (N/A)              \n";
+  print "  3a) Version 1 MAP           16) DSC-RSP         31) TST-REQ (N/A)      46) EM-REQ (N/A)                                            \n";
+  print "  3b) Version 5 MAP   (N/A)   17) DSA-ACK         32) DCD (N/A)          47) EM-RSP (N/A)                                            \n";
+  print "  3c) Version 5 P-MAP (N/A)   18) DSC-REQ         33) MDD (N/A)          48) CM-STATUS-ACK (N/A)      a) Request Frame (minislots)   \n";
+  print "   4) RNG-REQ                 19) DSC-RSP         34) B-INIT-RNG-REQ     49) OFDM Chan Descr (N/A)    b) Request Frame (bytes)       \n";
+  print "   5) RNG-RSP                 20) DSC-ACK         35) Type 35 UCD        50) DPD (N/A)                c) O-INIT-RNG-REQ (N/A)        \n";
+  print "   6) REG-REQ                 21) DSD-REQ         36) DBC-REQ            51) Type 51 UCD                                             \n";
+  print "   7) REG-RSP                 22) DSD-RSP         37) DBC-RSP            52) ODS-REQ (N/A)                                           \n";
+  print "   8) UCC-REQ                 23) DCC-REQ         38) DBC-ACK            53) ODS-RSP (N/A)                                           \n";
+  print "   9) UCC-RSP                 24) DCC-RSP         39) DPV-REQ (N/A)      54) OPT-REQ (N/A)                                           \n";
+  print "  10) TRI-TCD (N/A)           25) DCC-ACK         40) DPV-RSP (N/A)      55) OPT-RSP (N/A)                                           \n";
+  print "  11) TRI-TSI (N/A)           26) DCI-REQ (N/A)   41) CM-STATUS (N/A)    56) OPT-ACK (N/A)                                           \n";
+  print "  12) BPKM-REQ                27) DCI-RSP (N/A)   42) CM-CTRL-REQ (N/A)  57) DTP-REQ (N/A)                                           \n";
+  print "  13) BPKM-RSP                28) UP-DIS (N/A)    43) CM-CTRL-RSP (N/A)  58) DTP-RSP (N/A)                                           \n";
   print "\n  Frame " . $frame_number . " - Choose packet type which will be generated:  ";
   $frame_type = <>;
   chomp $frame_type;
@@ -1806,7 +1806,7 @@ sub random_bits {
   our $binary = "";
   our @input = @_;
   our @bits = split //, sprintf ("%0" . $input[0] . "b", $input[1]);
-  foreach (@bits) { 
+  foreach (@bits) {
     if ($_ == 1) {
       $bits[$i] = int(rand(2));
     }
