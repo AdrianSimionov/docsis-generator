@@ -77,7 +77,7 @@ while ($last_frame != 1) {
   print "  3c) Version 5 P-MAP (N/A)   18) DSC-REQ         33) MDD (N/A)          48) CM-STATUS-ACK (N/A)      a) Request Frame (minislots)   \n";
   print "   4) RNG-REQ                 19) DSC-RSP         34) B-INIT-RNG-REQ     49) OFDM Chan Descr (N/A)    b) Request Frame (bytes)       \n";
   print "   5) RNG-RSP                 20) DSC-ACK         35) Type 35 UCD        50) DPD (N/A)                c) O-INIT-RNG-REQ (N/A)        \n";
-  print "   6) REG-REQ                 21) DSD-REQ         36) DBC-REQ            51) Type 51 UCD                                             \n";
+  print "   6) REG-REQ                 21) DSD-REQ         36) DBC-REQ            51) Type 51 UCD (N/A)                                       \n";
   print "   7) REG-RSP                 22) DSD-RSP         37) DBC-RSP            52) ODS-REQ (N/A)                                           \n";
   print "   8) UCC-REQ                 23) DCC-REQ         38) DBC-ACK            53) ODS-RSP (N/A)                                           \n";
   print "   9) UCC-RSP                 24) DCC-RSP         39) DPV-REQ (N/A)      54) OPT-REQ (N/A)                                           \n";
