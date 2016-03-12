@@ -29,6 +29,7 @@ sub DCC_RSP();
 sub DCC_ACK();
 sub type29UCD();
 sub INIT_RNG_REQ();
+sub MDD();
 sub B_INIT_RNG_REQ();
 sub type35UCD();
 sub DBC_REQ();
@@ -138,6 +139,8 @@ while ($last_frame != 1) {
     ($packet_value, $packet_length) = type29UCD();
   } elsif ($frame_type eq "30") {
     ($packet_value, $packet_length) = INIT_RNG_REQ();
+  } elsif ($frame_type eq "33") {
+    ($packet_value, $packet_length) = MDD();
   } elsif ($frame_type eq "34") {
     ($packet_value, $packet_length) = B_INIT_RNG_REQ();
   } elsif ($frame_type eq "35") {
@@ -1332,6 +1335,102 @@ sub INIT_RNG_REQ() {
   $packet_length = $packet_length + 1;
   # Add MAC Management header
   ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "1E", "00");
+  # Add DOCSIS header
+  ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
+  return ($packet_value, $packet_length);
+}
+
+sub MDD() {
+  our $packet_value = "";
+  our $packet_length = 0;
+  our $last_tlv = 0;
+  our $last_sub_tlv = 0;
+  our $choosen_tlv;
+  our $choosen_sub_tlv;
+  our $tlv_number = 1;
+  our $sub_tlv_number = 1;
+  our $sub_tlv_value;
+  our $sub_tlv_length = 0;
+  # Add Configuration Change Count
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Number of Fragments
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add Fragment Sequence Number
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Current Channel ID
+  $packet_value = $packet_value . random_bits(8, 0xFF);
+  $packet_length = $packet_length + 1;
+  # Add TLV data
+  while ($last_tlv != 1) {
+    if ($clear_screen) {
+      system $^O eq 'MSWin32' ? 'cls' : 'clear';
+    }
+    print "\n  Following TLVs can be added:\n\n";
+    print "   1) Downstream Channel Active List\n";
+    print "      ...\n";
+    print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
+    $choosen_tlv = <>;
+    chomp $choosen_tlv;
+    if ($choosen_tlv eq "1") {
+      $sub_tlv_value = "";
+      $sub_tlv_length = 0;
+      $last_sub_tlv = 0;
+      while ($last_sub_tlv != 1) {
+        if ($clear_screen) {
+          system $^O eq 'MSWin32' ? 'cls' : 'clear';
+        }
+        print "\n  Following sub-TLVs can be added:\n\n";
+        print "   1) Channel ID\n";
+        print "   2) Frequency\n";
+        print "   3) Modulation Order/Annex\n";
+        print "   4) Primary Capable\n";
+        print "   5) CM-STATUS Event Enable Bitmask\n";
+        print "   6) MAP and UCD Transport Indicator\n";
+        print "   7) OFDM PLC Parameters\n";
+        print "\n  sub-TLV " . $sub_tlv_number++ . " - Choose sub-TLV which should be added:  ";
+        $choosen_sub_tlv = <>;
+        chomp $choosen_sub_tlv;
+        if ($choosen_sub_tlv eq "1") {
+          $sub_tlv_value = $sub_tlv_value . "01" . "01" . random_bits(8, 0xFF);
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "2") {
+          $sub_tlv_value = $sub_tlv_value . "02" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
+          $sub_tlv_length = $sub_tlv_length + 6;
+        } elsif ($choosen_sub_tlv eq "3") {
+          my @array = (0, 1, 2, 16, 17, 18, 32, 33, 34);
+          $sub_tlv_value = $sub_tlv_value . "03" . "01" . sprintf("%02x", $array[rand @array]);
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "4") {
+          $sub_tlv_value = $sub_tlv_value . "04" . "01" . random_bits(8, 0x01);
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "5") {
+          $sub_tlv_value = $sub_tlv_value . "05" . "02" . random_bits(16, 0x0036);
+          $sub_tlv_length = $sub_tlv_length + 4;
+        } elsif ($choosen_sub_tlv eq "6") {
+          $sub_tlv_value = $sub_tlv_value . "06" . "01" . random_bits(8, 0x01);
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } else {
+          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          exit;
+        }
+        printf "\n  Is this last sub-TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+        $last_sub_tlv = <>;
+      }
+      $packet_value = $packet_value . "01" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+      $packet_length = $packet_length + $sub_tlv_length + 2;
+    } else {
+      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      exit;
+    }
+    printf "\n  Is this last TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+    $last_tlv = <>;
+    $tlv_number++;
+  }
+  # Add MAC Management header
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "21", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
   return ($packet_value, $packet_length);
