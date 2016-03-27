@@ -1412,6 +1412,9 @@ sub MDD() {
         } elsif ($choosen_sub_tlv eq "6") {
           $sub_tlv_value = $sub_tlv_value . "06" . "01" . random_bits(8, 0x01);
           $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "7") {
+          $sub_tlv_value = $sub_tlv_value . "07" . "01" . random_bits(8, 0x7F);
+          $sub_tlv_length = $sub_tlv_length + 3;
         } else {
           print "\n  This is not a valid option. Calling EXIT... \n\n";
           exit;
