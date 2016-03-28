@@ -1351,6 +1351,8 @@ sub MDD() {
   our $sub_tlv_number = 1;
   our $sub_tlv_value;
   our $sub_tlv_length = 0;
+  our $i = 0;
+  our $j = 0;
   # Add Configuration Change Count
   $packet_value = $packet_value . random_bits(8, 0xFF);
   $packet_length = $packet_length + 1;
@@ -1370,6 +1372,8 @@ sub MDD() {
     }
     print "\n  Following TLVs can be added:\n\n";
     print "   1) Downstream Channel Active List\n";
+    print "      ...\n";
+    print "   2) MAC Domain Downstream Service Group\n";
     print "      ...\n";
     print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
     $choosen_tlv = <>;
@@ -1423,6 +1427,39 @@ sub MDD() {
         $last_sub_tlv = <>;
       }
       $packet_value = $packet_value . "01" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+      $packet_length = $packet_length + $sub_tlv_length + 2;
+    } elsif ( $choosen_tlv eq "2" ) {
+      $sub_tlv_value = "";
+      $sub_tlv_length = 0;
+      $last_sub_tlv = 0;
+      while ($last_sub_tlv != 1) {
+        if ($clear_screen) {
+          system $^O eq 'MSWin32' ? 'cls' : 'clear';
+        }
+        print "\n  Following sub-TLVs can be added:\n\n";
+        print "   1) MD-DS-SG Identifier\n";
+        print "   2) Downstream Channel ID list\n";
+        print "\n  sub-TLV " . $sub_tlv_number++ . " - Choose sub-TLV which should be added:  ";
+        $choosen_sub_tlv = <>;
+        chomp $choosen_sub_tlv;
+        if ($choosen_sub_tlv eq "1") {
+          $sub_tlv_value = $sub_tlv_value . "01" . "01" . random_bits(8, 0xFF);
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "2") {
+          $i = rand(0x1F);
+          $sub_tlv_value = $sub_tlv_value . "02" . sprintf("%02x", $i);
+          for (my $j=1; $j <= $i; $j++) {
+            $sub_tlv_value = $sub_tlv_value . random_bits(8, 0xFF);
+          }
+          $sub_tlv_length = $sub_tlv_length + 2 + $i;
+        } else {
+          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          exit;
+        }
+        printf "\n  Is this last sub-TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+        $last_sub_tlv = <>;
+      }
+      $packet_value = $packet_value . "02" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
