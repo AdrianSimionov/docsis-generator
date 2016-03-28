@@ -1376,6 +1376,8 @@ sub MDD() {
     print "   2) MAC Domain Downstream Service Group\n";
     print "      ...\n";
     print "   3) Downstream Ambiguity Resolution Frequency List TLV\n";
+    print "   4) Receive Channel Profile Reporting Control\n";
+    print "      ...\n";
     print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
     $choosen_tlv = <>;
     chomp $choosen_tlv;
@@ -1469,6 +1471,39 @@ sub MDD() {
         $packet_value = $packet_value . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
       }
       $packet_length = $packet_length + 2 + $i * 4;
+    } elsif ( $choosen_tlv eq "4" ) {
+      $sub_tlv_value = "";
+      $sub_tlv_length = 0;
+      $last_sub_tlv = 0;
+      while ($last_sub_tlv != 1) {
+        if ($clear_screen) {
+          system $^O eq 'MSWin32' ? 'cls' : 'clear';
+        }
+        print "\n  Following sub-TLVs can be added:\n\n";
+        print "   1) RCP SC-QAM Center Frequency Spacing\n";
+        print "   2) Verbose RCP reporting\n";
+        print "   3) Fragmented RCP transmission\n";
+        print "\n  sub-TLV " . $sub_tlv_number++ . " - Choose sub-TLV which should be added:  ";
+        $choosen_sub_tlv = <>;
+        chomp $choosen_sub_tlv;
+        if ($choosen_sub_tlv eq "1") {
+          $sub_tlv_value = $sub_tlv_value . "01" . "01" . sprintf("%02x", int(rand(2)));
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "2") {
+          $sub_tlv_value = $sub_tlv_value . "02" . "01" . sprintf("%02x", int(rand(2)));
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "3") {
+          $sub_tlv_value = $sub_tlv_value . "03" . "01" . "01";
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } else {
+          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          exit;
+        }
+        printf "\n  Is this last sub-TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+        $last_sub_tlv = <>;
+      }
+      $packet_value = $packet_value . "04" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+      $packet_length = $packet_length + $sub_tlv_length + 2;
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
       exit;
