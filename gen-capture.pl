@@ -1375,6 +1375,7 @@ sub MDD() {
     print "      ...\n";
     print "   2) MAC Domain Downstream Service Group\n";
     print "      ...\n";
+    print "   3) Downstream Ambiguity Resolution Frequency List TLV\n";
     print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
     $choosen_tlv = <>;
     chomp $choosen_tlv;
@@ -1448,7 +1449,7 @@ sub MDD() {
         } elsif ($choosen_sub_tlv eq "2") {
           $i = rand(0x1F);
           $sub_tlv_value = $sub_tlv_value . "02" . sprintf("%02x", $i);
-          for (my $j=1; $j <= $i; $j++) {
+          for ($j=1; $j <= $i; $j++) {
             $sub_tlv_value = $sub_tlv_value . random_bits(8, 0xFF);
           }
           $sub_tlv_length = $sub_tlv_length + 2 + $i;
@@ -1461,6 +1462,13 @@ sub MDD() {
       }
       $packet_value = $packet_value . "02" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
+    } elsif ( $choosen_tlv eq "3" ) {
+      $i = int(rand(8)) + 1;
+      $packet_value = $packet_value . "03" . sprintf("%02x", $i * 4);
+      for ($j=1; $j <= $i; $j++) {
+        $packet_value = $packet_value . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
+      }
+      $packet_length = $packet_length + 2 + $i * 4;
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
       exit;
