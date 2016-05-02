@@ -1380,6 +1380,7 @@ sub MDD() {
     print "      ...\n";
     print "   5) IP Initialization Parameters\n";
     print "      ...\n";
+    print "   6) Early Authentication and Encryption\n";
     print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
     $choosen_tlv = <>;
     chomp $choosen_tlv;
@@ -1535,6 +1536,10 @@ sub MDD() {
       }
       $packet_value = $packet_value . "05" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
+    } elsif ( $choosen_tlv eq "6" ) {
+      $i = int(rand(8)) + 1;
+      $packet_value = $packet_value . "06" . "01" . sprintf("%02x", int(rand(2)));
+      $packet_length = $packet_length + 3;
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
       exit;
