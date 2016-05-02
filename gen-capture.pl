@@ -1381,6 +1381,8 @@ sub MDD() {
     print "   5) IP Initialization Parameters\n";
     print "      ...\n";
     print "   6) Early Authentication and Encryption\n";
+    print "   7) Upstream Active Channel List\n";
+    print "      ...\n";
     print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
     $choosen_tlv = <>;
     chomp $choosen_tlv;
@@ -1540,6 +1542,47 @@ sub MDD() {
       $i = int(rand(8)) + 1;
       $packet_value = $packet_value . "06" . "01" . sprintf("%02x", int(rand(2)));
       $packet_length = $packet_length + 3;
+    } elsif ( $choosen_tlv eq "7" ) {
+      $sub_tlv_value = "";
+      $sub_tlv_length = 0;
+      $last_sub_tlv = 0;
+      while ($last_sub_tlv != 1) {
+        if ($clear_screen) {
+          system $^O eq 'MSWin32' ? 'cls' : 'clear';
+        }
+        print "\n  Following sub-TLVs can be added:\n\n";
+        print "   1) Upstream Channel ID for a channel being listed\n";
+        print "   2) CM-STATUS Event Enable Bitmask\n";
+        print "   3) Upstream Channel Priority\n";
+        print "   4) Downstream Channel(s) on which MAPs and UCDs for this Upstream Channel are sent\n";
+        print "\n  sub-TLV " . $sub_tlv_number++ . " - Choose sub-TLV which should be added:  ";
+        $choosen_sub_tlv = <>;
+        chomp $choosen_sub_tlv;
+        if ($choosen_sub_tlv eq "1") {
+          $sub_tlv_value = $sub_tlv_value . "01" . "01" . random_bits(8, 0xFF);
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "2") {
+          $sub_tlv_value = $sub_tlv_value . "02" . "02" . random_bits(16, 0x01C0);
+          $sub_tlv_length = $sub_tlv_length + 4;
+        } elsif ($choosen_sub_tlv eq "3") {
+          $sub_tlv_value = $sub_tlv_value . "03" . "01" . sprintf("%02x", int(rand(8)));
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($choosen_sub_tlv eq "4") {
+          $i = int(rand(16)) + 1;
+          $sub_tlv_value = $sub_tlv_value . "04" . sprintf("%02x", $i);
+          for ($j=1; $j <= $i; $j++) {
+            $sub_tlv_value = $sub_tlv_value . random_bits(8, 0xFF);
+          }
+          $sub_tlv_length = $sub_tlv_length + 2 + $i;
+        } else {
+          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          exit;
+        }
+        printf "\n  Is this last sub-TLV to be added? (Choose: 1 for YES / 0 for NO)  ";
+        $last_sub_tlv = <>;
+      }
+      $packet_value = $packet_value . "07" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+      $packet_length = $packet_length + $sub_tlv_length + 2;
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
       exit;
