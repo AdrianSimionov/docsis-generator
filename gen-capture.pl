@@ -1383,6 +1383,7 @@ sub MDD() {
     print "   6) Early Authentication and Encryption\n";
     print "   7) Upstream Active Channel List\n";
     print "      ...\n";
+    print "   8) Upstream Ambiguity Resolution Channel List\n";
     print "\n  TLV " . $tlv_number . " - Choose TLV which should be added:  ";
     $choosen_tlv = <>;
     chomp $choosen_tlv;
@@ -1582,6 +1583,13 @@ sub MDD() {
       }
       $packet_value = $packet_value . "07" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
+    } elsif ( $choosen_tlv eq "8" ) {
+      $i = int(rand(16)) + 1;
+      $packet_value = $packet_value . "08" . sprintf("%02x", $i);
+      for ($j=1; $j <= $i; $j++) {
+        $packet_value = $packet_value . random_bits(8, 0xFF);
+      }
+      $packet_length = $packet_length + 2 + $i;
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
       exit;
