@@ -254,6 +254,7 @@ sub type2UCD() {
       $sub_tlv_value = "";
       $sub_tlv_length = 0;
       $last_sub_tlv = 0;
+      $sub_tlv_number = 1;
       while ($last_sub_tlv != 1) {
         if ($clear_screen) {
           system $^O eq 'MSWin32' ? 'cls' : 'clear';
@@ -320,6 +321,7 @@ sub type2UCD() {
       $sub_tlv_value = "";
       $sub_tlv_length = 0;
       $last_sub_tlv = 0;
+      $sub_tlv_number = 1;
       while ($last_sub_tlv != 1) {
         if ($clear_screen) {
           system $^O eq 'MSWin32' ? 'cls' : 'clear';
