@@ -2340,7 +2340,7 @@ sub add_bpkm_attributes() {
       }
       $attributes_length = $attributes_length + $this_attribute_length;
     } elsif ($tlv_type eq "7") {
-      @AuthKey = (96, 128);
+      @AuthKey = (96, 128, 256);
       $this_attribute_length = $AuthKey[rand(@AuthKey)];
       $attributes_value = $attributes_value . "07" . sprintf("%04x", $this_attribute_length);
       $attributes_length = $attributes_length + 3;
