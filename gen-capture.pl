@@ -1800,7 +1800,7 @@ sub type35UCD() {
       }
       $packet_length = $packet_length + $i + 2;
     } elsif ($choosen_tlv eq "7") {
-      $packet_value = $packet_value . "07" . "01" . sprintf("%02x", int(rand(2)));
+      $packet_value = $packet_value . "07" . "01" . sprintf("%02x", int(rand(2)) + 1);
       $packet_length = $packet_length + 3;
     } elsif ($choosen_tlv eq "8") {
       $packet_value = $packet_value . "08" . "01" . sprintf("%02x", int(rand(32)) + 1);
