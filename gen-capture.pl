@@ -1317,7 +1317,7 @@ sub type29UCD() {
     $tlv_number++;
   }
   # Add MAC Management header
-  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "1D", "00");
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "03", "1D", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
   return ($packet_value, $packet_length);
@@ -1856,7 +1856,7 @@ sub type35UCD() {
     $tlv_number++;
   }
   # Add MAC Management header
-  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "01", "23", "00");
+  ($packet_value, $packet_length) = add_mac_management($packet_value, $packet_length, "00", "00", "04", "23", "00");
   # Add DOCSIS header
   ($packet_value, $packet_length) = add_docsis($packet_value, $packet_length, "0000", undef, "00", 192, 2, 0);
   return ($packet_value, $packet_length);
