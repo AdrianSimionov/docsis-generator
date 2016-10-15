@@ -2110,6 +2110,8 @@ sub add_annex_c_tlvs {
     print "   3) Network Access\n";
     print "   4) DOCSIS 1.0 Class of Service\n";
     print "      ...\n";
+    print "   5) Modem Capabilities\n";
+    print "      ...\n";
     print "\n  TLV " . $tlv_number . " - Choose which TLV will be generated:  ";
     $tlv_type = <>;
     chomp $tlv_type;
@@ -2168,6 +2170,33 @@ sub add_annex_c_tlvs {
         $sub_tlv_number++;
       }
       $packet_value = $packet_value . "04" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
+      $packet_length = $packet_length + $sub_tlv_length + 2;
+    } elsif ($tlv_type eq "5") {
+      while ($last_sub_tlv != 1) {
+        if ($clear_screen) {
+          system $^O eq 'MSWin32' ? 'cls' : 'clear';
+        }
+        print "\n  Modem Capabilities sub-TLVs which can be added:\n\n";
+        print "  40) Extended Upstream Transmit Power Capability\n";
+        print "  48) Extended Packet Length Support Capability\n";
+        print "\n  sub-TLV " . $sub_tlv_number . " - Choose which TLV will be generated:  ";
+        $sub_tlv_type = <>;
+        chomp $sub_tlv_type;
+        if ($sub_tlv_type eq "40") {
+          $sub_tlv_value = $sub_tlv_value . "28" . "01" . sprintf("%02x", int(rand(39)) + 205);
+          $sub_tlv_length = $sub_tlv_length + 3;
+        } elsif ($sub_tlv_type eq "48") {
+          $sub_tlv_value = $sub_tlv_value . "30" . "02" . "07D0";
+          $sub_tlv_length = $sub_tlv_length + 4;
+        } else {
+          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          exit;
+        }
+        print "\n  Is this last sub-TLV for this packet? (Choose: 1 for YES / 0 for NO)  ";
+        $last_sub_tlv = <>;
+        $sub_tlv_number++;
+      }
+      $packet_value = $packet_value . "05" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
