@@ -123,8 +123,6 @@ for {set i 0} {$i < 1} {incr i 1} {
     # TLV 5.2
     expect ":  "
     send "2\r"
-
-
     # Next sub-TLV
     expect ")  "
     send "0\r"
@@ -239,7 +237,6 @@ for {set i 0} {$i < 1} {incr i 1} {
     # Last TLV
     expect ")  "
     send "1\r"
-
     # Next packet
     expect ")  "
     send "0\r"
@@ -267,7 +264,6 @@ send "1\r"
 expect ")  "
 send "1\r"
 
-# print exit code
 expect " "
 send "\r"
 
