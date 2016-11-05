@@ -2030,7 +2030,7 @@ sub add_docsis () {
     $packet_length = $input[1] + 2;
     # TODO Add ehdr field
     # Add Length field
-    $packet_value = sprintf("%04x", $packet_length) . $packet_value;
+    $packet_value = sprintf("%04x", $packet_length - 2) . $packet_value;
     $packet_length = $packet_length + 2;
     # Add MAC_PARM field
     $packet_value = $input[4] . $packet_value;
