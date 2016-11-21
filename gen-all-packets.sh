@@ -241,6 +241,69 @@ for {set i 0} {$i < 1} {incr i 1} {
     expect ")  "
     send "0\r"
 
+    # Version 1 MAP
+    expect ":  "
+    send "3a\r"
+    # Next packet
+    expect ")  "
+    send "0\r"
+
+    # RNG-REQ
+    expect ":  "
+    send "4\r"
+    # Next packet
+    expect ")  "
+    send "0\r"
+
+    # RNG-RSP
+    expect ":  "
+    send "5\r"
+    # TLV 1
+    expect ":  "
+    send "1\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 2
+    expect ":  "
+    send "2\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 3
+    expect ":  "
+    send "3\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 4
+    expect ":  "
+    send "4\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5
+    expect ":  "
+    send "5\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 6
+    expect ":  "
+    send "6\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 7
+    expect ":  "
+    send "7\r"
+    # Last TLV
+    expect ")  "
+    send "1\r"
+    # Next packet
+    expect ")  "
+    send "0\r"
+
     # Request Frame (minislots)
     expect ":  "
     send "a\r"
