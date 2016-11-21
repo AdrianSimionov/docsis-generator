@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+use Digest::CRC qw();
+
 # Subroutine prototypes
 sub SYNC ();
 sub type2UCD();
@@ -2024,9 +2026,17 @@ sub add_docsis () {
   our @input = @_;
   our $packet_value;
   our $packet_length;
+  our @v;
+  my $ctx = Digest::CRC->new(width => 16, poly => 0x1021, init => 0xFFFF, xorout => 0xFFFF, refin => 1, refout => 1);
   if ($input[6] eq "0" || $input[6] eq "2") {
     # Add HCS field
-    $packet_value = $input[2] . $input[0];
+    $ctx->reset;
+    $ctx->add(chr($input[5] + $input[6] + $input[7]));
+    $ctx->add(chr(0x00));
+    $ctx->add(chr(0x00));
+    $ctx->add(chr($packet_length));
+    @v = split //, $ctx->hexdigest;
+    $packet_value = $v[2] . $v[3] . $v[0] . $v[1] . $input[0];
     $packet_length = $input[1] + 2;
     # TODO Add ehdr field
     # Add Length field
