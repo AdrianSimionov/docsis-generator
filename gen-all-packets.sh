@@ -304,6 +304,229 @@ for {set i 0} {$i < 1} {incr i 1} {
     expect ")  "
     send "0\r"
 
+    # Type 29 UCD
+    expect ":  "
+    send "29\r"
+    # TLV 1
+    expect ":  "
+    send "1\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 2
+    expect ":  "
+    send "2\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 3
+    expect ":  "
+    send "3\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5
+    expect ":  "
+    send "5\r"
+    # TLV 5.1
+    expect ":  "
+    send "1\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.2
+    expect ":  "
+    send "2\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.3
+    expect ":  "
+    send "3\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.4
+    expect ":  "
+    send "4\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.5
+    expect ":  "
+    send "5\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.6
+    expect ":  "
+    send "6\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.7
+    expect ":  "
+    send "7\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.8
+    expect ":  "
+    send "8\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.9
+    expect ":  "
+    send "9\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.10
+    expect ":  "
+    send "10\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.11
+    expect ":  "
+    send "11\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.12
+    expect ":  "
+    send "12\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.13
+    expect ":  "
+    send "13\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.14
+    expect ":  "
+    send "14\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.15
+    expect ":  "
+    send "15\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.16
+    expect ":  "
+    send "16\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.17
+    expect ":  "
+    send "17\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 5.18
+    expect ":  "
+    send "18\r"
+    # Last sub-TLV
+    expect ")  "
+    send "1\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 6
+    expect ":  "
+    send "6\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 7
+    expect ":  "
+    send "7\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 8
+    expect ":  "
+    send "8\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 9
+    expect ":  "
+    send "9\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 10
+    expect ":  "
+    send "10\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 11
+    expect ":  "
+    send "11\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 12
+    expect ":  "
+    send "12\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 13
+    expect ":  "
+    send "13\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 14
+    expect ":  "
+    send "14\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 15
+    expect ":  "
+    send "15\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 16
+    expect ":  "
+    send "16\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 17
+    expect ":  "
+    send "17\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 18
+    expect ":  "
+    send "18\r"
+    # Next TLV
+    expect ")  "
+    send "0\r"
+    # TLV 19
+    expect ":  "
+    send "19\r"
+    # Last TLV
+    expect ")  "
+    send "1\r"
+    # Next packet
+    expect ")  "
+    send "0\r"
+
     # Request Frame (minislots)
     expect ":  "
     send "a\r"
@@ -316,16 +539,16 @@ for {set i 0} {$i < 1} {incr i 1} {
     send "b\r"
     # Next packet
     expect ")  "
-    send "0\r"
+    send "1\r"
 
 }
 
 # Last SYNC packet
-expect ":  "
-send "1\r"
+#expect ":  "
+#send "1\r"
 # Next packet
-expect ")  "
-send "1\r"
+#expect ")  "
+#send "1\r"
 
 expect " "
 send "\r"
