@@ -2227,10 +2227,10 @@ sub add_annex_c_tlvs {
           $sub_tlv_value = $sub_tlv_value . "01" . "01" . "01";
           $sub_tlv_length = $sub_tlv_length + 3;
         } elsif ($sub_tlv_type eq "2") {
-          $this_tlv_length = int(rand(2) + 1);
+          $this_tlv_length = int(rand(10) + 10);
           $sub_tlv_value = $sub_tlv_value . "02" . sprintf("%02x", $this_tlv_length);
           for ($i = 0; $i < $this_tlv_length; $i++) {
-            $sub_tlv_value = $sub_tlv_value . "00";
+            $sub_tlv_value = $sub_tlv_value . random_bits(8, 0xFF);
           }
           $sub_tlv_length = $sub_tlv_length + 2 + $this_tlv_length;
         } else {
@@ -2241,11 +2241,8 @@ sub add_annex_c_tlvs {
         $last_sub_tlv = <>;
         $sub_tlv_number++;
       }
-      print $sub_tlv_length . "   " . $sub_tlv_value . "\n";
-      print $packet_length . "   " . $packet_value . "\n";
       $packet_value = $packet_value . "2D" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
-      print $packet_length . "   " . $packet_value . "\n";
     } else {
       print "\n  This is not a valid option. Calling EXIT... \n\n";
       exit;
