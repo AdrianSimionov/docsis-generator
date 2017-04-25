@@ -2035,7 +2035,7 @@ sub add_docsis () {
     $ctx->add(chr(0x00));
     $ctx->add(chr(0x00));
     $ctx->add(chr($packet_length));
-    @v = split //, $ctx->hexdigest;
+    @v = split //, sprintf("%04x", hex($ctx->hexdigest));
     $packet_value = $v[2] . $v[3] . $v[0] . $v[1] . $input[0];
     $packet_length = $input[1] + 2;
     # TODO Add ehdr field
