@@ -2139,6 +2139,7 @@ sub add_annex_c_tlvs {
       $packet_value = $packet_value . "03" . "01" . random_bits(8, 0x01);
       $packet_length = $packet_length + 3;
     } elsif ($tlv_type eq "4") {
+      $last_sub_tlv = 0;
       while ($last_sub_tlv != 1) {
         if ($clear_screen) {
           system $^O eq 'MSWin32' ? 'cls' : 'clear';
@@ -2186,6 +2187,7 @@ sub add_annex_c_tlvs {
       $packet_value = $packet_value . "04" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
     } elsif ($tlv_type eq "5") {
+      $last_sub_tlv = 0;
       while ($last_sub_tlv != 1) {
         if ($clear_screen) {
           system $^O eq 'MSWin32' ? 'cls' : 'clear';
@@ -2213,6 +2215,7 @@ sub add_annex_c_tlvs {
       $packet_value = $packet_value . "05" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
     } elsif ($tlv_type eq "45") {
+      $last_sub_tlv = 0;
       while ($last_sub_tlv != 1) {
         if ($clear_screen) {
           system $^O eq 'MSWin32' ? 'cls' : 'clear';
