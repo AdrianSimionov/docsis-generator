@@ -27,6 +27,7 @@ sub request_minislots();
 sub request_bytes();
 sub random_bits;
 
+my $debug = 0;
 my $pcap_file = "";
 my $packet_length;
 my $packet_value;
@@ -65,7 +66,7 @@ sub usage {
   exit(1);
 }
 
-if ($clear_screen) {
+if ($clear_screen && (!$write_all_flag)) {
   system $^O eq 'MSWin32' ? 'cls' : 'clear';
 }
 
@@ -79,7 +80,7 @@ binmode(PCAP_FILE);
 
 print PCAP_FILE pack "H*", $pcap_header;
 
-while ($last_frame != 1) {
+while (($last_frame != 1) && (!$write_all_flag)) { # check $write_all_flag to save another nesting of a simple if statement
   @command_tlvs = ();
   if ($clear_screen) {
     system $^O eq 'MSWin32' ? 'cls' : 'clear';
@@ -191,7 +192,7 @@ while ($last_frame != 1) {
   } elsif ($frame_type eq "b") {
     #No TLVs needed
   } else {
-    print "\n  This is not a valid option. Calling EXIT... \n\n";
+    print "\n  This is not a valid option ($frame_type). Calling EXIT... \n\n";
     exit;
   }
 
@@ -206,9 +207,130 @@ while ($last_frame != 1) {
   $frame_number++;
 }
 
+if ($write_all_flag) {
+  @all_frame_data = ([1],
+                     [2, [1], [2], [3], 
+                         [4, [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11]],
+                         [5, [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14]],
+                         [6], [7], [15], [16], [18], [19]],
+                     ["3a"],
+                     [4],
+                     [5, [1], [2], [3], [4], [5], [6], [7]],
+                     [6, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [7, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [8],
+                     [9],
+                     [12, [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [15], [16], [17], [18], [19], [20], [21], [22], [23], [24], [25], [26], [27], [127]],
+                     [13, [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [15], [16], [17], [18], [19], [20], [21], [22], [23], [24], [25], [26], [27], [127]],
+                     [14, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [15, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [16, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [17, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [18, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [19, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [20, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [21, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [22],
+                     [23, [1],
+                         [2, [1], [2], [3], [4], [5], [6], [7]],
+                         [3], [4], [6],
+                         [7, [1], [2], [5]],
+                         [8], [27], [31]],
+                     [24, [1, [1], [2]],
+                         [27], [31]],
+                     [25, [27], [31]],
+                     [29, [1], [2], [3],
+                         [5, [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18]],
+                         [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18], [19]],
+                     [30],
+                     [33, [1, [1], [2], [3], [4], [5], [6], [7]],
+                         [2, [1], [2]],
+                         [3],
+                         [4, [1], [2], [3]],
+                         [5, [1], [2]],
+                         [6],
+                         [7, [1], [2], [3], [4]],
+                         [8]],
+                     [34],
+                     [35, [1], [2], [3],
+                         [5, [1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13], [14], [15], [16], [17], [18]],
+                         [6], [7], [8], [9], [10], [11], [12], [13], [15], [16], [17], [18], [19], [20], [21], [22]],
+                     [36, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [37, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [38, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [44, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     [45, [1], [2], [3],
+                         [4, [1], [2], [3], [4], [5], [6], [7]],
+                         [5, [40], [48]],
+                         [45, [1], [2]]],
+                     ["a"],
+                     ["b"]);
+}
+
 printf "\n  Your packets were stored in file:    " . $pcap_file . "\n\n";
 
 my $frame_count = 0;
+if ($debug) {
+  printf "You requested the following data:\n";
+  foreach (@all_frame_data) {
+    print "Frame type: $all_frame_data[$frame_count][0]\n";
+    my $tlv_count = 1;
+    while (exists($all_frame_data[$frame_count][$tlv_count][0])) {
+      print "   TLV ($tlv_count): $all_frame_data[$frame_count][$tlv_count][0]\n";
+      my $subtlv_count = 1;
+      while (exists($all_frame_data[$frame_count][$tlv_count][$subtlv_count][0])) {
+        print "   SubTLV ($subtlv_count): $all_frame_data[$frame_count][$tlv_count][$subtlv_count][0]\n";
+        $subtlv_count++;
+      }
+      $tlv_count++;
+    }
+    $frame_count++;
+  }
+}
+
+$frame_count = 0;
 foreach (@all_frame_data) {
   $frame_type = $all_frame_data[$frame_count][0];
 
@@ -283,7 +405,7 @@ foreach (@all_frame_data) {
   } elsif ($frame_type eq "b") {
     ($packet_value, $packet_length) = request_bytes();
   } else {
-    print "\n  This is not a valid option. Calling EXIT... \n\n";
+    print "\n  This is not a valid option ($frame_type). Calling EXIT... \n\n";
     exit;
   }
   
@@ -385,7 +507,7 @@ sub type2UCD_GUI() {
         } elsif ($choosen_sub_tlv eq "10") {
         } elsif ($choosen_sub_tlv eq "11") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -432,7 +554,7 @@ sub type2UCD_GUI() {
         } elsif ($choosen_sub_tlv eq "13") {
         } elsif ($choosen_sub_tlv eq "14") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -446,7 +568,7 @@ sub type2UCD_GUI() {
     } elsif ($choosen_tlv eq "18") {
     } elsif ($choosen_tlv eq "19") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -468,8 +590,7 @@ sub type2UCD_GUI() {
 sub type2UCD () {
   my ($frame_index) = @_;
   our $packet_value;
-  our $packet_length;
-  our @all_frame_data;
+  our $packet_length = 0;
   my $choosen_tlv;
   my $choosen_sub_tlv;
   my $tlv_number = 1;
@@ -492,7 +613,7 @@ sub type2UCD () {
   $packet_length = $packet_length + 1;
   # Add TLV data
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
 
     if ($choosen_tlv eq "1") {
       $packet_value = $packet_value . "01" . "01" . sprintf("%02x", 2 ** rand(0x5));
@@ -549,14 +670,13 @@ sub type2UCD () {
           $sub_tlv_value = $sub_tlv_value . "0B" . "01" . sprintf("%02x", rand(2) + 1);
           $sub_tlv_length = $sub_tlv_length + 3;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
-
-        $packet_value = $packet_value . "04" . sprintf("%02x", $sub_tlv_length + 1) . sprintf("%02x", int(rand(15)) + 1) . $sub_tlv_value;
-        $packet_length = $packet_length + 3 + $sub_tlv_length;
         $sub_tlv_number++;
       }
+      $packet_value = $packet_value . "04" . sprintf("%02x", $sub_tlv_length + 1) . sprintf("%02x", int(rand(15)) + 1) . $sub_tlv_value;
+      $packet_length = $packet_length + 3 + $sub_tlv_length;
     } elsif ($choosen_tlv eq "5") {
       # Create BURST5 sub-TLVs
       $sub_tlv_value = "";
@@ -608,13 +728,13 @@ sub type2UCD () {
           $sub_tlv_value = $sub_tlv_value . "0E" . "01" . sprintf("%02x", rand(2) + 1);
           $sub_tlv_length = $sub_tlv_length + 3;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
-        $packet_value = $packet_value . "05" . sprintf("%02x", $sub_tlv_length + 1) . sprintf("%02x", int(rand(15)) + 1) . $sub_tlv_value;
-        $packet_length = $packet_length + 3 + $sub_tlv_length;
         $sub_tlv_number++;
       }
+      $packet_value = $packet_value . "05" . sprintf("%02x", $sub_tlv_length + 1) . sprintf("%02x", int(rand(15)) + 1) . $sub_tlv_value;
+      $packet_length = $packet_length + 3 + $sub_tlv_length;
     } elsif ($choosen_tlv eq "6") {
       $i = int(rand(63)) + 1;
       $packet_value = $packet_value . "06" . sprintf("%02x", $i);
@@ -638,7 +758,7 @@ sub type2UCD () {
       $packet_value = $packet_value . "13" . "04" . random_bits(32, 0xFFFF000F);
       $packet_length = $packet_length + 6;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
 
@@ -748,7 +868,7 @@ sub RNG_RSP_GUI() {
     } elsif ($choosen_tlv eq "6") {
     } elsif ($choosen_tlv eq "7") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -765,8 +885,7 @@ sub RNG_RSP_GUI() {
 sub RNG_RSP() {
   my ($frame_index) = @_;
   our $packet_value;
-  our $packet_length;
-  our @all_frame_data;
+  our $packet_length = 0;
   our $choosen_tlv;
   our $tlv_number = 1;
   our $i;
@@ -779,7 +898,7 @@ sub RNG_RSP() {
   $packet_length = $packet_length + 1;
   # Add TLV data
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "1") {
       $packet_value = $packet_value . "01" . "04" . random_bits(32, 0xFFFFFFFF);
       $packet_length = $packet_length + 6;
@@ -807,7 +926,7 @@ sub RNG_RSP() {
       $packet_value = $packet_value . "07" . "01" . random_bits(8, 0xFF);
       $packet_length = $packet_length + 3;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     $tlv_number++;
@@ -1144,7 +1263,7 @@ sub DCC_REQ_GUI () {
         } elsif ($choosen_sub_tlv eq "6") {
         } elsif ($choosen_sub_tlv eq "7") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1171,7 +1290,7 @@ sub DCC_REQ_GUI () {
         } elsif ($choosen_sub_tlv eq "2") {
         } elsif ($choosen_sub_tlv eq "5") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1182,7 +1301,7 @@ sub DCC_REQ_GUI () {
     } elsif ($choosen_tlv eq "27") {
     } elsif ($choosen_tlv eq "31") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -1202,7 +1321,6 @@ sub DCC_REQ_GUI () {
 
 sub DCC_REQ () {
   my ($frame_index) = @_;
-  our @all_frame_data;
   our $packet_value;
   our $packet_length = 0;
   our $tlv_number = 1;
@@ -1216,7 +1334,7 @@ sub DCC_REQ () {
   $packet_length = $packet_length + 2;
   # Add TLV Encoded information
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "1") {
       $packet_value = $packet_value . "01" . "01" . random_bits(8, 0xFF);
       $packet_length = $packet_length + 3;
@@ -1248,7 +1366,7 @@ sub DCC_REQ () {
           $sub_tlv_value = $sub_tlv_value . "07" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
           $sub_tlv_length = $sub_tlv_length + 6;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -1281,7 +1399,7 @@ sub DCC_REQ () {
           $sub_tlv_value = $sub_tlv_value . "05" . "04" . random_bits(32, 0xFFFFFFFF);
           $sub_tlv_length = $sub_tlv_length + 6;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -1298,10 +1416,9 @@ sub DCC_REQ () {
       $packet_value = $packet_value . "1F" . "01" . sprintf("%02x", (int(rand(16))));
       $packet_length = $packet_length + 3;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
-    print "\n  Is this last TLV for this packet? (Choose: 1 for YES / 0 for NO)  ";
     $tlv_number++;
   }
   # Add MAC Management header
@@ -1350,7 +1467,7 @@ sub DCC_RSP_GUI () {
         if ($choosen_sub_tlv eq "1") {
         } elsif ($choosen_sub_tlv eq "2") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1360,7 +1477,7 @@ sub DCC_RSP_GUI () {
     } elsif ($choosen_tlv eq "27") {
     } elsif ($choosen_tlv eq "31") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
 
@@ -1382,7 +1499,6 @@ sub DCC_RSP_GUI () {
 
 sub DCC_RSP () {
   my ($frame_index) = @_;
-  our @all_frame_data;
   our $packet_value;
   our $packet_length = 0;
   our $tlv_number = 1;
@@ -1399,7 +1515,7 @@ sub DCC_RSP () {
   $packet_length = $packet_length + 1;
   # Add TLV Encoded information
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "1") {
       $sub_tlv_value = "";
       $sub_tlv_length = 0;
@@ -1413,7 +1529,7 @@ sub DCC_RSP () {
           $sub_tlv_value = $sub_tlv_value . "02" . "08" . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF);
           $sub_tlv_length = $sub_tlv_length + 10;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -1427,7 +1543,7 @@ sub DCC_RSP () {
       $packet_value = $packet_value . "1F" . "01" . sprintf("%02x", (int(rand(16))));
       $packet_length = $packet_length + 3;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     $tlv_number++;
@@ -1458,7 +1574,7 @@ sub DCC_ACK_GUI() {
     if ($choosen_tlv eq "27") {
     } elsif ($choosen_tlv eq "31") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -1472,7 +1588,6 @@ sub DCC_ACK_GUI() {
 
 sub DCC_ACK() {
   my ($frame_index) = @_;
-  our @all_frame_data;
   our $packet_value;
   our $packet_length = 0;
   our $tlv_number = 1;
@@ -1482,7 +1597,7 @@ sub DCC_ACK() {
   $packet_length = $packet_length + 2;
   # Add TLV Encoded information
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "27") {
       $packet_value = $packet_value . "1B" . "14" . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFF) . random_bits(32, 0xFFFFFFFF) . random_bits(32, 0xFFFFFFFF);
       $packet_length = $packet_length + 22;
@@ -1490,7 +1605,7 @@ sub DCC_ACK() {
       $packet_value = $packet_value . "1F" . "01" . sprintf("%02x", (int(rand(16))));
       $packet_length = $packet_length + 3;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     $tlv_number++;
@@ -1592,7 +1707,7 @@ sub type29UCD_GUI() {
         } elsif ($choosen_sub_tlv eq "17") {
         } elsif ($choosen_sub_tlv eq "18") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1614,7 +1729,7 @@ sub type29UCD_GUI() {
     } elsif ($choosen_tlv eq "18") {
     } elsif ($choosen_tlv eq "19") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -1633,9 +1748,8 @@ sub type29UCD_GUI() {
 
 sub type29UCD() {
   my ($frame_index) = @_;
-  our @all_frame_data;
   our $packet_value;
-  our $packet_length;
+  our $packet_length = 0;
   our $choosen_tlv;
   our $choosen_sub_tlv;
   our $tlv_number = 1;
@@ -1658,7 +1772,7 @@ sub type29UCD() {
   $packet_length = $packet_length + 1;
   # Add TLV data
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "1") {
       $packet_value = $packet_value . "01" . "01" . sprintf("%02x", 2 ** rand(0x5));
       $packet_length = $packet_length + 3;
@@ -1734,7 +1848,7 @@ sub type29UCD() {
           $sub_tlv_value = $sub_tlv_value . "12" . "01" . sprintf("%02x", rand(2) + 1);
           $sub_tlv_length = $sub_tlv_length + 3;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -1788,7 +1902,7 @@ sub type29UCD() {
       $packet_value = $packet_value . "13" . "04" . random_bits(32, 0xFFFF000F);
       $packet_length = $packet_length + 6;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     $tlv_number++;
@@ -1877,7 +1991,7 @@ sub MDD_GUI() {
         } elsif ($choosen_sub_tlv eq "6") {
         } elsif ($choosen_sub_tlv eq "7") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1899,7 +2013,7 @@ sub MDD_GUI() {
         if ($choosen_sub_tlv eq "1") {
         } elsif ($choosen_sub_tlv eq "2") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1924,7 +2038,7 @@ sub MDD_GUI() {
         } elsif ($choosen_sub_tlv eq "2") {
         } elsif ($choosen_sub_tlv eq "3") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1946,7 +2060,7 @@ sub MDD_GUI() {
         if ($choosen_sub_tlv eq "1") {
         } elsif ($choosen_sub_tlv eq "2") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1973,7 +2087,7 @@ sub MDD_GUI() {
         } elsif ($choosen_sub_tlv eq "3") {
         } elsif ($choosen_sub_tlv eq "4") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -1982,7 +2096,7 @@ sub MDD_GUI() {
       }
     } elsif ( $choosen_tlv eq "8" ) {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -2001,7 +2115,6 @@ sub MDD_GUI() {
 
 sub MDD() {
   my ($frame_index) = @_;
-  our @all_frame_data;
   our $packet_value = "";
   our $packet_length = 0;
   our $choosen_tlv;
@@ -2026,7 +2139,7 @@ sub MDD() {
   $packet_length = $packet_length + 1;
   # Add TLV data
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "1") {
       $sub_tlv_value = "";
       $sub_tlv_length = 0;
@@ -2056,7 +2169,7 @@ sub MDD() {
           $sub_tlv_value = $sub_tlv_value . "07" . "01" . random_bits(8, 0x7F);
           $sub_tlv_length = $sub_tlv_length + 3;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2080,7 +2193,7 @@ sub MDD() {
           }
           $sub_tlv_length = $sub_tlv_length + 2 + $i;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2110,7 +2223,7 @@ sub MDD() {
           $sub_tlv_value = $sub_tlv_value . "03" . "01" . "01";
           $sub_tlv_length = $sub_tlv_length + 3;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2130,7 +2243,7 @@ sub MDD() {
           $sub_tlv_value = $sub_tlv_value . "02" . "03" . random_bits(24, 0x0FFFFF);
           $sub_tlv_length = $sub_tlv_length + 5;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2163,7 +2276,7 @@ sub MDD() {
           }
           $sub_tlv_length = $sub_tlv_length + 2 + $i;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2178,7 +2291,7 @@ sub MDD() {
       }
       $packet_length = $packet_length + 2 + $i;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     $tlv_number++;
@@ -2306,7 +2419,7 @@ sub type35UCD_GUI() {
         } elsif ($choosen_sub_tlv eq "17") {
         } elsif ($choosen_sub_tlv eq "18") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -2331,7 +2444,7 @@ sub type35UCD_GUI() {
     } elsif ($choosen_tlv eq "21") {
     } elsif ($choosen_tlv eq "22") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -2350,9 +2463,8 @@ sub type35UCD_GUI() {
 
 sub type35UCD() {
   my ($frame_index) = @_;
-  our @all_frame_data;
   our $packet_value;
-  our $packet_length;
+  our $packet_length = 0;
   our $choosen_tlv;
   our $choosen_sub_tlv;
   our $tlv_number = 1;
@@ -2375,7 +2487,7 @@ sub type35UCD() {
   $packet_length = $packet_length + 1;
   # Add TLV data
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "1") {
       $packet_value = $packet_value . "01" . "01" . sprintf("%02x", 2 ** rand(0x5));
       $packet_length = $packet_length + 3;
@@ -2451,7 +2563,7 @@ sub type35UCD() {
           $sub_tlv_value = $sub_tlv_value . "12" . "01" . sprintf("%02x", rand(2) + 1);
           $sub_tlv_length = $sub_tlv_length + 3;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2514,7 +2626,7 @@ sub type35UCD() {
       $packet_value = $packet_value . "16" . "01" . random_bits(8, 0x01);
       $packet_length = $packet_length + 3;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     $tlv_number++;
@@ -2648,7 +2760,7 @@ sub request_bytes() {
 sub add_mac_management () {
   our @input = @_;
   our $packet_value;
-  our $packet_length;
+  our $packet_length = 0;
   our $i;
   # Add Reserved/Multipart field
   $packet_value = $input[6] . $input[0];
@@ -2692,7 +2804,7 @@ sub add_mac_management () {
 sub add_docsis () {
   our @input = @_;
   our $packet_value;
-  our $packet_length;
+  our $packet_length = 0;
   our @v;
   my $ctx = Digest::CRC->new(width => 16, poly => 0x1021, init => 0xFFFF, xorout => 0xFFFF, refin => 1, refout => 1);
   if ($input[6] eq "0" || $input[6] eq "2") {
@@ -2821,7 +2933,7 @@ sub add_annex_c_tlvs_GUI {
         } elsif ($choosen_sub_tlv eq "6") {
         } elsif ($choosen_sub_tlv eq "7") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -2843,7 +2955,7 @@ sub add_annex_c_tlvs_GUI {
         if ($choosen_sub_tlv eq "40") {
         } elsif ($choosen_sub_tlv eq "48") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -2865,7 +2977,7 @@ sub add_annex_c_tlvs_GUI {
         if ($choosen_sub_tlv eq "1") {
         } elsif ($choosen_sub_tlv eq "2") {
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         push @command_subtlvs, [$choosen_sub_tlv];
@@ -2873,7 +2985,7 @@ sub add_annex_c_tlvs_GUI {
         $last_sub_tlv = <>;
       }
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
 
@@ -2894,7 +3006,6 @@ sub add_annex_c_tlvs_GUI {
 
 sub add_annex_c_tlvs {
   my $frame_index;
-  our @all_frame_data;
   our $packet_value;
   our $packet_length;
   our $tlv_number = 1;
@@ -2911,7 +3022,7 @@ sub add_annex_c_tlvs {
 
   # Add TLV data
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
     if ($choosen_tlv eq "1") {
       $packet_value = $packet_value . "01" . "04" . sprintf("%08x", (int(rand(1686)) + 108) * 1000000);
       $packet_length = $packet_length + 6;
@@ -2924,7 +3035,7 @@ sub add_annex_c_tlvs {
     } elsif ($choosen_tlv eq "4") {
       $sub_tlv_value = "";
       $sub_tlv_length = 0;
-	  $sub_tlv_number = 1;
+      $sub_tlv_number = 1;
       while (exists($all_frame_data[$frame_index][$tlv_number][$sub_tlv_number][0])) {
         $choosen_sub_tlv = $all_frame_data[$frame_index][$tlv_number][$sub_tlv_number][0];
         if ($choosen_sub_tlv eq "1") {
@@ -2949,7 +3060,7 @@ sub add_annex_c_tlvs {
           $sub_tlv_value = $sub_tlv_value . "07" . "01" . sprintf("%02x", (int(rand(2))));
           $sub_tlv_length = $sub_tlv_length + 3;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2959,7 +3070,7 @@ sub add_annex_c_tlvs {
     } elsif ($choosen_tlv eq "5") {
       $sub_tlv_value = "";
       $sub_tlv_length = 0;
-	  $sub_tlv_number = 1;
+      $sub_tlv_number = 1;
       while (exists($all_frame_data[$frame_index][$tlv_number][$sub_tlv_number][0])) {
         $choosen_sub_tlv = $all_frame_data[$frame_index][$tlv_number][$sub_tlv_number][0];
         if ($choosen_sub_tlv eq "40") {
@@ -2969,7 +3080,7 @@ sub add_annex_c_tlvs {
           $sub_tlv_value = $sub_tlv_value . "30" . "02" . "07D0";
           $sub_tlv_length = $sub_tlv_length + 4;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -2979,7 +3090,7 @@ sub add_annex_c_tlvs {
     } elsif ($choosen_tlv eq "45") {
       $sub_tlv_value = "";
       $sub_tlv_length = 0;
-	  $sub_tlv_number = 1;
+      $sub_tlv_number = 1;
       while (exists($all_frame_data[$frame_index][$tlv_number][$sub_tlv_number][0])) {
         $choosen_sub_tlv = $all_frame_data[$frame_index][$tlv_number][$sub_tlv_number][0];
         if ($choosen_sub_tlv eq "1") {
@@ -2993,7 +3104,7 @@ sub add_annex_c_tlvs {
           }
           $sub_tlv_length = $sub_tlv_length + 2 + $this_tlv_length;
         } else {
-          print "\n  This is not a valid option. Calling EXIT... \n\n";
+          print "\n  This is not a valid option ($choosen_sub_tlv). Calling EXIT... \n\n";
           exit;
         }
         $sub_tlv_number++;
@@ -3001,7 +3112,7 @@ sub add_annex_c_tlvs {
       $packet_value = $packet_value . "2D" . sprintf("%02x", $sub_tlv_length) . $sub_tlv_value;
       $packet_length = $packet_length + $sub_tlv_length + 2;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
 
@@ -3079,7 +3190,7 @@ sub add_bpkm_attributes_GUI() {
     } elsif ($choosen_tlv eq "26") {
     } elsif ($choosen_tlv eq "27") {
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
     #Save the TLV
@@ -3099,7 +3210,6 @@ sub add_bpkm_attributes() {
   my $frame_index;
   our $packet_value;
   our $packet_length;
-  our @all_frame_data;
   our $tlv_number = 1;
   our $choosen_tlv;
   our $last_tlv = 0;
@@ -3123,7 +3233,7 @@ sub add_bpkm_attributes() {
   $packet_length = $input[2];
   # Add TLV data
   while (exists($all_frame_data[$frame_index][$tlv_number][0])) {
-    $choosen_tlv = $all_frame_data[$frame_count][$tlv_number][0];
+    $choosen_tlv = $all_frame_data[$frame_index][$tlv_number][0];
 
     if ($choosen_tlv eq "1") {
       $this_attribute_length = int(rand(10)) + 10;
@@ -3386,7 +3496,7 @@ sub add_bpkm_attributes() {
       $attributes_value = $attributes_value . "1B" . "0004" . random_bits(32, 0xFEFFFFFF);
       $attributes_length = $attributes_length + 1 + 2 + 4;
     } else {
-      print "\n  This is not a valid option. Calling EXIT... \n\n";
+      print "\n  This is not a valid option ($choosen_tlv). Calling EXIT... \n\n";
       exit;
     }
 
