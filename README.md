@@ -10,6 +10,21 @@ The packets generated are stored in a PCAP file format. It can be understood by 
 
 Field values are not trying to be Cablelabs compliant at all, at least at this stage.
 
+Usage
+-----
+
+```
+./gen-capture.pl [--pcap=<filename>] [--all]
+```
+
+`--pcap = <filename>`
+
+  * Provide pcap file without being prompted by application.
+  
+`--all`
+
+  * Write out all TLVs/sub TLVs.
+
 Bug reporting
 -------------
 
