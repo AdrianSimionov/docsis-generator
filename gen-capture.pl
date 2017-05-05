@@ -2804,7 +2804,7 @@ sub add_mac_management () {
 sub add_docsis () {
   our @input = @_;
   our $packet_value;
-  our $packet_length = 0;
+  our $packet_length;
   our @v;
   my $ctx = Digest::CRC->new(width => 16, poly => 0x1021, init => 0xFFFF, xorout => 0xFFFF, refin => 1, refout => 1);
   if ($input[6] eq "0" || $input[6] eq "2") {
